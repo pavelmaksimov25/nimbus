@@ -1,0 +1,83 @@
+openapi: '3.0.0'
+info:
+  title: API Title
+  version: '0.1.0'
+servers:
+  - url: https://localhost:8080/v1
+paths:
+    /tasks:
+      post:
+        summary: Create a new task
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateTaskRequest'
+        responses:
+          '201':
+            description: Task created successfully
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/CreateTaskResponse'
+          '400':
+            $ref: '#/components/responses/400'
+          '500':
+            $ref: '#/components/responses/500'
+
+components:
+  schemas:
+    CreateTaskRequest:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of task items to create
+          items:
+            $ref: '#/components/schemas/TaskItem'
+    CreateTaskResponse:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+    Task:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        items:
+          type: array
+          description: List of task items
+          items:
+            $ref: '#/components/schemas/TaskItem'
+    TaskItem:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+    Id:
+      type: string
+      description: The unique identifier
+    
+  responses:
+    400:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                description: Error message describing the bad request
+    500:        
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                description: Error message describing the server error
