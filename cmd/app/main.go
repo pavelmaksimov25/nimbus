@@ -6,7 +6,8 @@ import (
 
 func main() {
 	server := restserver.NewTaskWebServer()
-	err := server.ListenAndServe()
+	server.RegisterRoutes()
+	err := server.Run()
 	if err != nil {
 		panic(err)
 	}

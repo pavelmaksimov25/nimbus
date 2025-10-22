@@ -11,6 +11,7 @@ import (
 const routePrefix string = "/api/v1"
 
 type Task struct {
+	ID string `json:"id,omitempty"`
 	Items []TaskItem `json:"items"`
 }
 
@@ -29,7 +30,6 @@ func NewTaskWebServer() *TaskWebServer {
 		addr: ":8080",
 	}
 }
-
 
 func (t *TaskWebServer) RegisterRoutes() {
 	rg := t.router.Group(routePrefix)
@@ -54,6 +54,9 @@ func (t *TaskWebServer) handleCreateTask(ctx *gin.Context) {
 		return
 	}
 
+	task.ID = "test"
+
 	fmt.Printf("Received Task: %v", task)
+	ctx.JSON(http.StatusCreated, gin.H{"data": task})
 }
 
