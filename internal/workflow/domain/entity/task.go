@@ -5,6 +5,6 @@ import (
 )
 
 type Task struct {
-	ID uuid.UUID
+	ID      uuid.UUID
 	Payload string
 }

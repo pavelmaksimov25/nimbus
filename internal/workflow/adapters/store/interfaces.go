@@ -2,10 +2,9 @@ package store
 
 import (
 	entity "nimbus/internal/workflow/domain/entity"
-	uuid "github.com/google/uuid"
 )
 
 type TaskStore interface {
-	StoreTask(payload string) (uuid.UUID, error)
+	StoreTask(payload string) (*entity.Task, error)
 	GetTasks() []entity.Task
 }

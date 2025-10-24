@@ -30,4 +30,3 @@ func (t *ApiServer) RegisterRoutes(taskService task.Service) {
 func (t *ApiServer) Run() error {
 	return t.router.Run(t.addr)
 }
-

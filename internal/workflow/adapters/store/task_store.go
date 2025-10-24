@@ -3,12 +3,12 @@ package store
 import (
 	"sync"
 
-	entity "nimbus/internal/workflow/domain/entity"
 	uuid "github.com/google/uuid"
+	entity "nimbus/internal/workflow/domain/entity"
 )
 
 type TaskStoreInMemory struct {
-	mu sync.RWMutex
+	mu    sync.RWMutex
 	store map[uuid.UUID]*entity.Task
 }
 
@@ -18,10 +18,10 @@ func NewTaskStoreInMemory() TaskStore {
 	}
 }
 
-func (ts *TaskStoreInMemory) StoreTask(payload string) (uuid.UUID, error) {
+func (ts *TaskStoreInMemory) StoreTask(payload string) (*entity.Task, error) {
 	id := uuid.New()
 	task := &entity.Task{
-		ID: id,
+		ID:      id,
 		Payload: payload,
 	}
 
@@ -29,7 +29,7 @@ func (ts *TaskStoreInMemory) StoreTask(payload string) (uuid.UUID, error) {
 	defer ts.mu.Unlock()
 	ts.store[id] = task
 
-	return id, nil
+	return task, nil
 }
 
 func (ts *TaskStoreInMemory) GetTasks() []entity.Task {

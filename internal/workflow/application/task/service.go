@@ -5,10 +5,9 @@ import (
 	entity "nimbus/internal/workflow/domain/entity"
 )
 
-
 type Service interface {
-	CreateTask(payload string) (string, error)
-	GetTasks() ([]entity.Task)
+	CreateTask(payload string) (*entity.Task, error)
+	GetTasks() []entity.Task
 }
 
 type taskService struct {
@@ -21,14 +20,10 @@ func NewTaskService(store store.TaskStore) Service {
 	}
 }
 
-func (ts *taskService) CreateTask(payload string) (string, error) {
-	id, err := ts.store.StoreTask(payload)
-	if err != nil {
-		return "", err
-	}
-	return id.String(), nil
+func (ts *taskService) CreateTask(payload string) (*entity.Task, error) {
+	return ts.store.StoreTask(payload)
 }
 
-func (ts *taskService) GetTasks() ([]entity.Task) {
+func (ts *taskService) GetTasks() []entity.Task {
 	return ts.store.GetTasks()
 }

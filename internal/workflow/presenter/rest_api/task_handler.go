@@ -11,8 +11,8 @@ import (
 )
 
 type Task struct {
-	ID    string     `json:"id,omitempty"`
-	Payload string 	 `json:"payload"`
+	ID      string `json:"id,omitempty"`
+	Payload string `json:"payload"`
 }
 
 type taskHandler struct {
@@ -46,16 +46,14 @@ func (t *taskHandler) handleCreateTask(ctx *gin.Context) {
 		return
 	}
 
-
-
-	taskID, err := t.service.CreateTask(task.Payload)
+	taskEntity, err := t.service.CreateTask(task.Payload)
 	if err != nil {
 		log.Printf("Error storing task: %s", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Internal Server Error"})
 		return
 	}
 
-	task.ID = taskID
+	task.ID = taskEntity.ID.String()
 
 	fmt.Printf("Received Task: %v", task)
 	ctx.JSON(http.StatusCreated, gin.H{"data": task})
