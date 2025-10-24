@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	store "nimbus/internal/workflow/adapters/store"
+	task "nimbus/internal/workflow/application/task"
 )
 
 type Task struct {
@@ -17,12 +17,12 @@ type Task struct {
 
 type taskHandler struct {
 	// for testing purposes the store will be used directly
-	store store.TaskStore
+	service task.Service
 }
 
-func NewTaskHandler(store store.TaskStore) *taskHandler {
+func NewTaskHandler(service task.Service) *taskHandler {
 	return &taskHandler{
-		store: store,
+		service: service,
 	}
 }
 
@@ -46,22 +46,22 @@ func (t *taskHandler) handleCreateTask(ctx *gin.Context) {
 		return
 	}
 
-	
 
-	taskID, err := t.store.StoreTask(task.Payload)
+
+	taskID, err := t.service.CreateTask(task.Payload)
 	if err != nil {
 		log.Printf("Error storing task: %s", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Internal Server Error"})
 		return
 	}
 
-	task.ID = taskID.String()
+	task.ID = taskID
 
 	fmt.Printf("Received Task: %v", task)
 	ctx.JSON(http.StatusCreated, gin.H{"data": task})
 }
 
 func (t *taskHandler) handGetTasks(ctx *gin.Context) {
-	tasks := t.store.GetTasks()
+	tasks := t.service.GetTasks()
 	ctx.JSON(http.StatusOK, gin.H{"data": tasks})
 }
