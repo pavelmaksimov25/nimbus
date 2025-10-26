@@ -2,9 +2,11 @@ package store
 
 import (
 	"sync"
+	"time"
+
+	entity "nimbus/internal/workflow/domain/entity"
 
 	uuid "github.com/google/uuid"
-	entity "nimbus/internal/workflow/domain/entity"
 )
 
 type TaskStoreInMemory struct {
@@ -23,6 +25,8 @@ func (ts *TaskStoreInMemory) StoreTask(payload string) (*entity.Task, error) {
 	task := &entity.Task{
 		ID:      id,
 		Payload: payload,
+		CreatedAt: time.Now().Unix(),
+		UpdatedAt: time.Now().Unix(),
 	}
 
 	ts.mu.Lock()

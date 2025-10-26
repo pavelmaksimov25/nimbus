@@ -6,11 +6,13 @@ import (
 
 type Workflow struct {
 	ID      uuid.UUID
-	Payload string
+	Name    string
 	Tasks   []Task
+	CreatedAt int64
 }
 
 type Task struct {
 	ID      uuid.UUID
 	Payload string
+	CreatedAt int64
 }
