@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -13,6 +14,7 @@ import (
 type Task struct {
 	ID      string `json:"id,omitempty"`
 	Payload string `json:"payload"`
+	CreatedAt string `json:"created_at,omitempty"`
 }
 
 type taskHandler struct {
@@ -54,6 +56,7 @@ func (t *taskHandler) handleCreateTask(ctx *gin.Context) {
 	}
 
 	task.ID = taskEntity.ID.String()
+	task.CreatedAt = taskEntity.CreatedAt.Format(time.RFC3339)
 
 	fmt.Printf("Received Task: %v", task)
 	ctx.JSON(http.StatusCreated, gin.H{"data": task})

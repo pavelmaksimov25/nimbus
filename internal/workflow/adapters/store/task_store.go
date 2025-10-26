@@ -25,8 +25,7 @@ func (ts *TaskStoreInMemory) StoreTask(payload string) (*entity.Task, error) {
 	task := &entity.Task{
 		ID:      id,
 		Payload: payload,
-		CreatedAt: time.Now().Unix(),
-		UpdatedAt: time.Now().Unix(),
+		CreatedAt: time.Now(),
 	}
 
 	ts.mu.Lock()
