@@ -7,14 +7,14 @@ import (
 )
 
 type Workflow struct {
-	ID      uuid.UUID
-	Name    string
-	Tasks   []Task
+	ID        uuid.UUID
+	Name      string
+	Tasks     []Task
 	CreatedAt time.Time
 }
 
 type Task struct {
-	ID      uuid.UUID
-	Payload string
+	ID        uuid.UUID
+	Payload   string
 	CreatedAt time.Time
 }

@@ -2,11 +2,9 @@ package store
 
 import (
 	"sync"
-	"time"
-
-	entity "nimbus/internal/workflow/domain/entity"
 
 	uuid "github.com/google/uuid"
+	entity "nimbus/internal/workflow/domain/entity"
 )
 
 type TaskStoreInMemory struct {
@@ -20,29 +18,29 @@ func NewTaskStoreInMemory() TaskStore {
 	}
 }
 
-func (ts *TaskStoreInMemory) StoreTask(payload string) (*entity.Task, error) {
-	id := uuid.New()
-	task := &entity.Task{
-		ID:      id,
-		Payload: payload,
-		CreatedAt: time.Now(),
-	}
-
+func (ts *TaskStoreInMemory) StoreTask(task *entity.Task) (*entity.Task, error) {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
-	ts.store[id] = task
-
+	ts.store[task.ID] = task
 	return task, nil
 }
 
 func (ts *TaskStoreInMemory) GetTasks() []entity.Task {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
-
 	var tasks []entity.Task
 	for _, task := range ts.store {
 		tasks = append(tasks, *task)
 	}
-
 	return tasks
+}
+
+func (ts *TaskStoreInMemory) GetTask(id uuid.UUID) *entity.Task {
+	ts.mu.Lock()
+	defer ts.mu.Unlock()
+	task, exists := ts.store[id]
+	if !exists {
+		return nil
+	}
+	return task
 }

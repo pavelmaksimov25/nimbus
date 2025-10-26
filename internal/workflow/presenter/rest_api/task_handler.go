@@ -7,13 +7,14 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 
 	task "nimbus/internal/workflow/application/task"
 )
 
 type Task struct {
-	ID      string `json:"id,omitempty"`
-	Payload string `json:"payload"`
+	ID        string `json:"id,omitempty"`
+	Payload   string `json:"payload"`
 	CreatedAt string `json:"created_at,omitempty"`
 }
 
@@ -31,10 +32,8 @@ func NewTaskHandler(service task.Service) *taskHandler {
 func (t *taskHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	rg.POST("/tasks", t.handleCreateTask)
 	rg.GET("/tasks", t.handGetTasks)
+	rg.GET("/tasks/:id", t.handleGetTask)
 	rg.GET("/tasks/:id/status", func(c *gin.Context) {
-		c.JSON(http.StatusNotImplemented, gin.H{"message": "Nope"})
-	})
-	rg.GET("/tasks/:id", func(c *gin.Context) {
 		c.JSON(http.StatusNotImplemented, gin.H{"message": "Nope"})
 	})
 }
@@ -65,4 +64,21 @@ func (t *taskHandler) handleCreateTask(ctx *gin.Context) {
 func (t *taskHandler) handGetTasks(ctx *gin.Context) {
 	tasks := t.service.GetTasks()
 	ctx.JSON(http.StatusOK, gin.H{"data": tasks})
+}
+
+func (t *taskHandler) handleGetTask(ctx *gin.Context) {
+	id, err := uuid.Parse(ctx.Param("id"))
+	if err != nil {
+		log.Printf("Invalid task ID: %s", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": "Invalid task ID"})
+		return
+	}
+
+	task, err := t.service.GetTask(id)
+	if err != nil {
+		log.Printf("Error getting task: %s", err)
+		ctx.JSON(http.StatusNotFound, gin.H{"message": "Task not found"})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"data": task})
 }
