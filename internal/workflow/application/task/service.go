@@ -30,6 +30,7 @@ func (ts *taskService) CreateTask(payload string) (*entity.Task, error) {
 	task := &entity.Task{
 		ID:        id,
 		Payload:   payload,
+		Status:    entity.StatusNew,
 		CreatedAt: time.Now(),
 	}
 
