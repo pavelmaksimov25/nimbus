@@ -13,6 +13,7 @@ type Service interface {
 	CreateTask(payload string) (*entity.Task, error)
 	GetTasks() []entity.Task
 	GetTask(id uuid.UUID) (*entity.Task, error)
+	StartTask(id uuid.UUID) error
 }
 
 type taskService struct {
@@ -47,4 +48,23 @@ func (ts *taskService) GetTask(id uuid.UUID) (*entity.Task, error) {
 		return nil, &types.RecordNotFoundError{Resource: "Task", ID: id.String()}
 	}
 	return task, nil
+}
+
+func (ts *taskService) StartTask(id uuid.UUID) error {
+	task := ts.store.GetTask(id)
+	if task == nil {
+		return &types.RecordNotFoundError{Resource: "Task", ID: id.String()}
+	}
+
+	if task.Status != entity.StatusNew {
+		return &types.UnprocessableEntityError{
+			Resource: "Task",
+			ID: id.String(),
+			Msg: "only tasks with status 'new' can be started",
+		}
+	}
+
+	task.Status = entity.StatusInProgress
+
+	return ts.store.UpdateTask(task)
 }

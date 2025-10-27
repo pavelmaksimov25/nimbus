@@ -44,3 +44,10 @@ func (ts *TaskStoreInMemory) GetTask(id uuid.UUID) *entity.Task {
 	}
 	return task
 }
+
+func (ts *TaskStoreInMemory) UpdateTask(task *entity.Task) error {
+	ts.mu.Lock()
+	defer ts.mu.Unlock()
+	ts.store[task.ID] = task
+	return nil
+}

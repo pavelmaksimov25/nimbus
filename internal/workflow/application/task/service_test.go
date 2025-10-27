@@ -5,6 +5,7 @@ import (
 
 	store "nimbus/internal/workflow/adapters/store"
 	"nimbus/internal/workflow/domain/entity"
+	"nimbus/internal/workflow/domain/types"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -80,4 +81,70 @@ func TestTaskService_GetTask_NotFound(t *testing.T) {
 	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, retrievedTask)
+}
+
+func TestTaskService_StartTask(t *testing.T) {
+	// Arrange
+	taskStore := store.NewTaskStoreInMemory()
+	taskService := NewTaskService(taskStore)
+	existingTask := &entity.Task{
+		ID: uuid.New(),
+		Payload: "Test Payload",
+		Status: entity.StatusNew,
+	}
+	taskStore.StoreTask(existingTask)
+
+	// Act
+	err := taskService.StartTask(existingTask.ID)
+
+	// Assert
+	assert.Nil(t, err)
+}
+
+func TestTaskService_StartTask_InvalidTaskStatus(t *testing.T) {
+	// Arrange
+	tests := []entity.Task{
+		{
+			ID: uuid.New(),
+			Payload: "test status in_progress",
+			Status: entity.StatusInProgress,
+		},
+		{
+			ID: uuid.New(),
+			Payload: "test status failed",
+			Status: entity.StatusFailed,
+		},
+		{
+			ID: uuid.New(),
+			Payload: "test status completed",
+			Status: entity.StatusCompleted,
+		},
+	}
+
+	for _, existingTask := range tests {
+		t.Run(existingTask.Payload, func(t *testing.T) {
+			// Arrange
+			taskStore := store.NewTaskStoreInMemory()
+			taskService := NewTaskService(taskStore)
+			taskStore.StoreTask(&existingTask)
+
+			// Act
+			err := taskService.StartTask(existingTask.ID)
+
+			// Assert
+			assert.IsType(t, &types.UnprocessableEntityError{}, err)
+		})
+	}
+}
+
+func TestTaskService_StartTask_NotFound(t *testing.T) {
+	// Arrange
+	taskStore := store.NewTaskStoreInMemory()
+	taskService := NewTaskService(taskStore)
+
+	// Act
+	err := taskService.StartTask(uuid.New())
+
+	// Assert
+	assert.IsType(t, &types.RecordNotFoundError{}, err)
 }
