@@ -4,20 +4,14 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
 	task "nimbus/internal/workflow/application/task"
+	"nimbus/internal/workflow/domain/entity"
+	"nimbus/internal/workflow/domain/types"
 )
-
-type Task struct {
-	ID        string `json:"id,omitempty"`
-	Payload   string `json:"payload"`
-	Status    string `json:"status,omitempty"`
-	CreatedAt string `json:"created_at,omitempty"`
-}
 
 type taskHandler struct {
 	// for testing purposes the store will be used directly
@@ -40,7 +34,7 @@ func (t *taskHandler) RegisterRoutes(rg *gin.RouterGroup) {
 }
 
 func (t *taskHandler) handleCreateTask(ctx *gin.Context) {
-	var task Task
+	var task entity.Task
 	err := ctx.ShouldBindJSON(&task)
 	if err != nil {
 		log.Printf("%s", err)
@@ -55,12 +49,8 @@ func (t *taskHandler) handleCreateTask(ctx *gin.Context) {
 		return
 	}
 
-	task.ID = taskEntity.ID.String()
-	task.CreatedAt = taskEntity.CreatedAt.Format(time.RFC3339)
-	task.Status = string(taskEntity.Status)
-
-	fmt.Printf("Received Task: %v", task)
-	ctx.JSON(http.StatusCreated, gin.H{"data": task})
+	fmt.Printf("Created Task: %v", taskEntity)
+	ctx.JSON(http.StatusCreated, gin.H{"data": taskEntity})
 }
 
 func (t *taskHandler) handGetTasks(ctx *gin.Context) {
@@ -96,8 +86,16 @@ func (t *taskHandler) handleStartTask(ctx *gin.Context) {
 	err = t.service.StartTask(id)
 	if err != nil {
 		log.Printf("Error starting task: %s", err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Internal Server Error"})
-		return
+		switch err.(type) {
+		case *types.RecordNotFoundError:
+			ctx.JSON(http.StatusNotFound, gin.H{"message": err.Error()})
+		case *types.UnprocessableEntityError:
+			ctx.JSON(http.StatusUnprocessableEntity, gin.H{"message": err.Error()})
+			return
+		default:
+			ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Internal Server Error"})
+			return
+		}
 	}
 	ctx.JSON(http.StatusOK, gin.H{"message": "Task started"})
 }
@@ -115,8 +113,17 @@ func (t *taskHandler) handleCompleteTask(ctx *gin.Context) {
 	err = t.service.CompleteTask(id, completionPayload)
 	if err != nil {
 		log.Printf("Error completing task: %s", err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Internal Server Error"})
-		return
+		switch err.(type) {
+		case *types.RecordNotFoundError:
+			ctx.JSON(http.StatusNotFound, gin.H{"message": err.Error()})
+		case *types.UnprocessableEntityError:
+			ctx.JSON(http.StatusUnprocessableEntity, gin.H{"message": err.Error()})
+			return
+		default:
+			ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Internal Server Error"})
+			return
+		}
+
 	}
 	ctx.JSON(http.StatusOK, gin.H{"message": "Task completed"})
 }
@@ -134,8 +141,16 @@ func (t *taskHandler) handleFailTask(ctx *gin.Context) {
 	err = t.service.FailTask(id, reason)
 	if err != nil {
 		log.Printf("Error failing task: %s", err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Internal Server Error"})
-		return
+		switch err.(type) {
+		case *types.RecordNotFoundError:
+			ctx.JSON(http.StatusNotFound, gin.H{"message": err.Error()})
+		case *types.UnprocessableEntityError:
+			ctx.JSON(http.StatusUnprocessableEntity, gin.H{"message": err.Error()})
+			return
+		default:
+			ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Internal Server Error"})
+			return
+		}
 	}
 	ctx.JSON(http.StatusOK, gin.H{"message": "Task marked as failed"})
 }

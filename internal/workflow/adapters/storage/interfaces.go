@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type TaskStore interface {
+type TaskStorage interface {
 	StoreTask(task *entity.Task) (*entity.Task, error)
 	GetTasks() []entity.Task
 	GetTask(id uuid.UUID) *entity.Task

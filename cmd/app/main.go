@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	taskStore := storage.NewTaskStoreInMemory()
+	taskStore := storage.NewTaskStorageInMemory()
 	taskService := task.NewTaskService(taskStore)
 	server := restapi.NewRestApiServer()
 	server.RegisterRoutes(taskService)

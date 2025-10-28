@@ -3,29 +3,30 @@ package storage
 import (
 	"sync"
 
-	uuid "github.com/google/uuid"
 	entity "nimbus/internal/workflow/domain/entity"
+
+	uuid "github.com/google/uuid"
 )
 
-type TaskStoreInMemory struct {
+type TaskStorageInMemory struct {
 	mu    sync.RWMutex
 	store map[uuid.UUID]*entity.Task
 }
 
-func NewTaskStoreInMemory() TaskStore {
-	return &TaskStoreInMemory{
+func NewTaskStorageInMemory() TaskStorage {
+	return &TaskStorageInMemory{
 		store: make(map[uuid.UUID]*entity.Task),
 	}
 }
 
-func (ts *TaskStoreInMemory) StoreTask(task *entity.Task) (*entity.Task, error) {
+func (ts *TaskStorageInMemory) StoreTask(task *entity.Task) (*entity.Task, error) {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
 	ts.store[task.ID] = task
 	return task, nil
 }
 
-func (ts *TaskStoreInMemory) GetTasks() []entity.Task {
+func (ts *TaskStorageInMemory) GetTasks() []entity.Task {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
 	var tasks []entity.Task
@@ -35,7 +36,7 @@ func (ts *TaskStoreInMemory) GetTasks() []entity.Task {
 	return tasks
 }
 
-func (ts *TaskStoreInMemory) GetTask(id uuid.UUID) *entity.Task {
+func (ts *TaskStorageInMemory) GetTask(id uuid.UUID) *entity.Task {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
 	task, exists := ts.store[id]
@@ -45,7 +46,7 @@ func (ts *TaskStoreInMemory) GetTask(id uuid.UUID) *entity.Task {
 	return task
 }
 
-func (ts *TaskStoreInMemory) UpdateTask(task *entity.Task) error {
+func (ts *TaskStorageInMemory) UpdateTask(task *entity.Task) error {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
 	ts.store[task.ID] = task

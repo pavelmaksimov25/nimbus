@@ -19,10 +19,10 @@ type Service interface {
 }
 
 type taskService struct {
-	store store.TaskStore
+	store store.TaskStorage
 }
 
-func NewTaskService(store store.TaskStore) Service {
+func NewTaskService(store store.TaskStorage) Service {
 	return &taskService{
 		store: store,
 	}
@@ -61,8 +61,8 @@ func (ts *taskService) StartTask(id uuid.UUID) error {
 	if task.Status != entity.StatusNew {
 		return &types.UnprocessableEntityError{
 			Resource: "Task",
-			ID: id.String(),
-			Msg: "only tasks with status 'new' can be started",
+			ID:       id.String(),
+			Msg:      "only tasks with status 'new' can be started",
 		}
 	}
 
@@ -80,8 +80,8 @@ func (ts *taskService) CompleteTask(id uuid.UUID, additionalPayload string) erro
 	if task.Status != entity.StatusInProgress {
 		return &types.UnprocessableEntityError{
 			Resource: "Task",
-			ID: id.String(),
-			Msg: "only tasks with status 'in_progress' can be completed",
+			ID:       id.String(),
+			Msg:      "only tasks with status 'in_progress' can be completed",
 		}
 	}
 
@@ -102,8 +102,8 @@ func (ts *taskService) FailTask(id uuid.UUID, reason string) error {
 	if task.Status != entity.StatusInProgress {
 		return &types.UnprocessableEntityError{
 			Resource: "Task",
-			ID: id.String(),
-			Msg: "only tasks with status 'in_progress' can be failed",
+			ID:       id.String(),
+			Msg:      "only tasks with status 'in_progress' can be failed",
 		}
 	}
 

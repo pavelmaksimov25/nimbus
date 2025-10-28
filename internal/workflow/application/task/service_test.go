@@ -13,7 +13,7 @@ import (
 
 func TestTaskService_CreateTask(t *testing.T) {
 	// Arrange
-	taskStore := store.NewTaskStoreInMemory()
+	taskStore := store.NewTaskStorageInMemory()
 	taskService := NewTaskService(taskStore)
 	payload := "Test Payload"
 
@@ -29,7 +29,7 @@ func TestTaskService_CreateTask(t *testing.T) {
 
 func TestTaskService_GetTasks(t *testing.T) {
 	// Arrange
-	taskStore := store.NewTaskStoreInMemory()
+	taskStore := store.NewTaskStorageInMemory()
 	taskService := NewTaskService(taskStore)
 	task := &entity.Task{
 		ID:      uuid.New(),
@@ -50,7 +50,7 @@ func TestTaskService_GetTasks(t *testing.T) {
 
 func TestTaskService_GetTask(t *testing.T) {
 	// Arrange
-	taskStore := store.NewTaskStoreInMemory()
+	taskStore := store.NewTaskStorageInMemory()
 	taskService := NewTaskService(taskStore)
 	task := &entity.Task{
 		ID:      uuid.New(),
@@ -71,7 +71,7 @@ func TestTaskService_GetTask(t *testing.T) {
 
 func TestTaskService_GetTask_NotFound(t *testing.T) {
 	// Arrange
-	taskStore := store.NewTaskStoreInMemory()
+	taskStore := store.NewTaskStorageInMemory()
 	taskService := NewTaskService(taskStore)
 	nonExistentID := uuid.New()
 
@@ -85,12 +85,12 @@ func TestTaskService_GetTask_NotFound(t *testing.T) {
 
 func TestTaskService_StartTask(t *testing.T) {
 	// Arrange
-	taskStore := store.NewTaskStoreInMemory()
+	taskStore := store.NewTaskStorageInMemory()
 	taskService := NewTaskService(taskStore)
 	existingTask := &entity.Task{
-		ID: uuid.New(),
+		ID:      uuid.New(),
 		Payload: "Test Payload",
-		Status: entity.StatusNew,
+		Status:  entity.StatusNew,
 	}
 	taskStore.StoreTask(existingTask)
 
@@ -105,26 +105,26 @@ func TestTaskService_StartTask_InvalidTaskStatus(t *testing.T) {
 	// Arrange
 	tests := []entity.Task{
 		{
-			ID: uuid.New(),
+			ID:      uuid.New(),
 			Payload: "test status in_progress",
-			Status: entity.StatusInProgress,
+			Status:  entity.StatusInProgress,
 		},
 		{
-			ID: uuid.New(),
+			ID:      uuid.New(),
 			Payload: "test status failed",
-			Status: entity.StatusFailed,
+			Status:  entity.StatusFailed,
 		},
 		{
-			ID: uuid.New(),
+			ID:      uuid.New(),
 			Payload: "test status completed",
-			Status: entity.StatusCompleted,
+			Status:  entity.StatusCompleted,
 		},
 	}
 
 	for _, existingTask := range tests {
 		t.Run(existingTask.Payload, func(t *testing.T) {
 			// Arrange
-			taskStore := store.NewTaskStoreInMemory()
+			taskStore := store.NewTaskStorageInMemory()
 			taskService := NewTaskService(taskStore)
 			taskStore.StoreTask(&existingTask)
 
@@ -139,7 +139,7 @@ func TestTaskService_StartTask_InvalidTaskStatus(t *testing.T) {
 
 func TestTaskService_StartTask_NotFound(t *testing.T) {
 	// Arrange
-	taskStore := store.NewTaskStoreInMemory()
+	taskStore := store.NewTaskStorageInMemory()
 	taskService := NewTaskService(taskStore)
 
 	// Act
@@ -151,18 +151,18 @@ func TestTaskService_StartTask_NotFound(t *testing.T) {
 
 func TestTaskService_CompleteTask(t *testing.T) {
 	// Arrange
-	taskStore := store.NewTaskStoreInMemory()
+	taskStore := store.NewTaskStorageInMemory()
 	taskService := NewTaskService(taskStore)
 	inProgressTask := &entity.Task{
-		ID: uuid.New(),
+		ID:      uuid.New(),
 		Payload: "Test Payload",
-		Status: entity.StatusInProgress,
+		Status:  entity.StatusInProgress,
 	}
 	taskStore.StoreTask(inProgressTask)
 
 	// Act
 	err := taskService.CompleteTask(inProgressTask.ID, " - Additional Payload")
-	task , _ := taskService.GetTask(inProgressTask.ID)
+	task, _ := taskService.GetTask(inProgressTask.ID)
 
 	// Assert
 	assert.Nil(t, err)
@@ -174,26 +174,26 @@ func TestTaskService_CompleteTask_InvalidTaskStatus(t *testing.T) {
 	// Arrange
 	tests := []entity.Task{
 		{
-			ID: uuid.New(),
+			ID:      uuid.New(),
 			Payload: "test status new",
-			Status: entity.StatusNew,
+			Status:  entity.StatusNew,
 		},
 		{
-			ID: uuid.New(),
+			ID:      uuid.New(),
 			Payload: "test status failed",
-			Status: entity.StatusFailed,
+			Status:  entity.StatusFailed,
 		},
 		{
-			ID: uuid.New(),
+			ID:      uuid.New(),
 			Payload: "test status completed",
-			Status: entity.StatusCompleted,
+			Status:  entity.StatusCompleted,
 		},
 	}
 
 	for _, existingTask := range tests {
 		t.Run(existingTask.Payload, func(t *testing.T) {
 			// Arrange
-			taskStore := store.NewTaskStoreInMemory()
+			taskStore := store.NewTaskStorageInMemory()
 			taskService := NewTaskService(taskStore)
 			taskStore.StoreTask(&existingTask)
 
@@ -208,7 +208,7 @@ func TestTaskService_CompleteTask_InvalidTaskStatus(t *testing.T) {
 
 func TestTaskService_CompleteTask_NotFound(t *testing.T) {
 	// Arrange
-	taskStore := store.NewTaskStoreInMemory()
+	taskStore := store.NewTaskStorageInMemory()
 	taskService := NewTaskService(taskStore)
 
 	// Act
@@ -220,18 +220,18 @@ func TestTaskService_CompleteTask_NotFound(t *testing.T) {
 
 func TestTaskService_FailTask(t *testing.T) {
 	// Arrange
-	taskStore := store.NewTaskStoreInMemory()
+	taskStore := store.NewTaskStorageInMemory()
 	taskService := NewTaskService(taskStore)
 	inProgressTask := &entity.Task{
-		ID: uuid.New(),
+		ID:      uuid.New(),
 		Payload: "Test Payload",
-		Status: entity.StatusInProgress,
+		Status:  entity.StatusInProgress,
 	}
 	taskStore.StoreTask(inProgressTask)
 
 	// Act
 	err := taskService.FailTask(inProgressTask.ID, "Some failure reason")
-	task , _ := taskService.GetTask(inProgressTask.ID)
+	task, _ := taskService.GetTask(inProgressTask.ID)
 
 	// Assert
 	assert.Nil(t, err)
@@ -241,7 +241,7 @@ func TestTaskService_FailTask(t *testing.T) {
 
 func TestTaskService_FailTask_NotFound(t *testing.T) {
 	// Arrange
-	taskStore := store.NewTaskStoreInMemory()
+	taskStore := store.NewTaskStorageInMemory()
 	taskService := NewTaskService(taskStore)
 
 	// Act
@@ -255,26 +255,26 @@ func TestTaskService_FailTask_InvalidTaskStatus(t *testing.T) {
 	// Arrange
 	tests := []entity.Task{
 		{
-			ID: uuid.New(),
+			ID:      uuid.New(),
 			Payload: "test status new",
-			Status: entity.StatusNew,
+			Status:  entity.StatusNew,
 		},
 		{
-			ID: uuid.New(),
+			ID:      uuid.New(),
 			Payload: "test status completed",
-			Status: entity.StatusCompleted,
+			Status:  entity.StatusCompleted,
 		},
 		{
-			ID: uuid.New(),
+			ID:      uuid.New(),
 			Payload: "test status failed",
-			Status: entity.StatusFailed,
+			Status:  entity.StatusFailed,
 		},
 	}
 
 	for _, existingTask := range tests {
 		t.Run(existingTask.Payload, func(t *testing.T) {
 			// Arrange
-			taskStore := store.NewTaskStoreInMemory()
+			taskStore := store.NewTaskStorageInMemory()
 			taskService := NewTaskService(taskStore)
 			taskStore.StoreTask(&existingTask)
 
