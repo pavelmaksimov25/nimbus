@@ -250,3 +250,39 @@ func TestTaskService_FailTask_NotFound(t *testing.T) {
 	// Assert
 	assert.IsType(t, &types.RecordNotFoundError{}, err)
 }
+
+func TestTaskService_FailTask_InvalidTaskStatus(t *testing.T) {
+	// Arrange
+	tests := []entity.Task{
+		{
+			ID: uuid.New(),
+			Payload: "test status new",
+			Status: entity.StatusNew,
+		},
+		{
+			ID: uuid.New(),
+			Payload: "test status completed",
+			Status: entity.StatusCompleted,
+		},
+		{
+			ID: uuid.New(),
+			Payload: "test status failed",
+			Status: entity.StatusFailed,
+		},
+	}
+
+	for _, existingTask := range tests {
+		t.Run(existingTask.Payload, func(t *testing.T) {
+			// Arrange
+			taskStore := store.NewTaskStoreInMemory()
+			taskService := NewTaskService(taskStore)
+			taskStore.StoreTask(&existingTask)
+
+			// Act
+			err := taskService.FailTask(existingTask.ID, "Some failure reason")
+
+			// Assert
+			assert.IsType(t, &types.UnprocessableEntityError{}, err)
+		})
+	}
+}
