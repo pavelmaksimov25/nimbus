@@ -3,7 +3,7 @@ package task
 import (
 	"testing"
 
-	store "nimbus/internal/workflow/adapters/store"
+	store "nimbus/internal/workflow/adapters/storage"
 	"nimbus/internal/workflow/domain/entity"
 	"nimbus/internal/workflow/domain/types"
 
@@ -144,6 +144,108 @@ func TestTaskService_StartTask_NotFound(t *testing.T) {
 
 	// Act
 	err := taskService.StartTask(uuid.New())
+
+	// Assert
+	assert.IsType(t, &types.RecordNotFoundError{}, err)
+}
+
+func TestTaskService_CompleteTask(t *testing.T) {
+	// Arrange
+	taskStore := store.NewTaskStoreInMemory()
+	taskService := NewTaskService(taskStore)
+	inProgressTask := &entity.Task{
+		ID: uuid.New(),
+		Payload: "Test Payload",
+		Status: entity.StatusInProgress,
+	}
+	taskStore.StoreTask(inProgressTask)
+
+	// Act
+	err := taskService.CompleteTask(inProgressTask.ID, " - Additional Payload")
+	task , _ := taskService.GetTask(inProgressTask.ID)
+
+	// Assert
+	assert.Nil(t, err)
+	assert.Equal(t, entity.StatusCompleted, task.Status)
+	assert.Equal(t, "Test Payload - Additional Payload", task.Payload)
+}
+
+func TestTaskService_CompleteTask_InvalidTaskStatus(t *testing.T) {
+	// Arrange
+	tests := []entity.Task{
+		{
+			ID: uuid.New(),
+			Payload: "test status new",
+			Status: entity.StatusNew,
+		},
+		{
+			ID: uuid.New(),
+			Payload: "test status failed",
+			Status: entity.StatusFailed,
+		},
+		{
+			ID: uuid.New(),
+			Payload: "test status completed",
+			Status: entity.StatusCompleted,
+		},
+	}
+
+	for _, existingTask := range tests {
+		t.Run(existingTask.Payload, func(t *testing.T) {
+			// Arrange
+			taskStore := store.NewTaskStoreInMemory()
+			taskService := NewTaskService(taskStore)
+			taskStore.StoreTask(&existingTask)
+
+			// Act
+			err := taskService.CompleteTask(existingTask.ID, "")
+
+			// Assert
+			assert.IsType(t, &types.UnprocessableEntityError{}, err)
+		})
+	}
+}
+
+func TestTaskService_CompleteTask_NotFound(t *testing.T) {
+	// Arrange
+	taskStore := store.NewTaskStoreInMemory()
+	taskService := NewTaskService(taskStore)
+
+	// Act
+	err := taskService.CompleteTask(uuid.New(), "")
+
+	// Assert
+	assert.IsType(t, &types.RecordNotFoundError{}, err)
+}
+
+func TestTaskService_FailTask(t *testing.T) {
+	// Arrange
+	taskStore := store.NewTaskStoreInMemory()
+	taskService := NewTaskService(taskStore)
+	inProgressTask := &entity.Task{
+		ID: uuid.New(),
+		Payload: "Test Payload",
+		Status: entity.StatusInProgress,
+	}
+	taskStore.StoreTask(inProgressTask)
+
+	// Act
+	err := taskService.FailTask(inProgressTask.ID, "Some failure reason")
+	task , _ := taskService.GetTask(inProgressTask.ID)
+
+	// Assert
+	assert.Nil(t, err)
+	assert.Equal(t, entity.StatusFailed, task.Status)
+	assert.Equal(t, "Some failure reason", task.FailReason)
+}
+
+func TestTaskService_FailTask_NotFound(t *testing.T) {
+	// Arrange
+	taskStore := store.NewTaskStoreInMemory()
+	taskService := NewTaskService(taskStore)
+
+	// Act
+	err := taskService.FailTask(uuid.New(), "Some failure reason")
 
 	// Assert
 	assert.IsType(t, &types.RecordNotFoundError{}, err)

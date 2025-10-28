@@ -14,10 +14,11 @@ type Workflow struct {
 }
 
 type Task struct {
-	ID        uuid.UUID
-	Payload   string
-	Status    TaskStatus
-	CreatedAt time.Time
+	ID         uuid.UUID
+	Payload    string
+	Status     TaskStatus
+	CreatedAt  time.Time
+	FailReason string
 }
 
 type TaskStatus string

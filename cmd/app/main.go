@@ -1,13 +1,13 @@
 package main
 
 import (
-	"nimbus/internal/workflow/adapters/store"
+	"nimbus/internal/workflow/adapters/storage"
 	"nimbus/internal/workflow/application/task"
 	restapi "nimbus/internal/workflow/presenter/rest_api"
 )
 
 func main() {
-	taskStore := store.NewTaskStoreInMemory()
+	taskStore := storage.NewTaskStoreInMemory()
 	taskService := task.NewTaskService(taskStore)
 	server := restapi.NewRestApiServer()
 	server.RegisterRoutes(taskService)

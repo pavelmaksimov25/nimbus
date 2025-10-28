@@ -35,6 +35,8 @@ func (t *taskHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	rg.GET("/tasks", t.handGetTasks)
 	rg.GET("/tasks/:id", t.handleGetTask)
 	rg.POST("/tasks/:id/start", t.handleStartTask)
+	rg.POST("/tasks/:id/complete", t.handleCompleteTask)
+	rg.POST("/tasks/:id/fail", t.handleFailTask)
 }
 
 func (t *taskHandler) handleCreateTask(ctx *gin.Context) {
@@ -98,4 +100,42 @@ func (t *taskHandler) handleStartTask(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{"message": "Task started"})
+}
+
+func (t *taskHandler) handleCompleteTask(ctx *gin.Context) {
+	id, err := uuid.Parse(ctx.Param("id"))
+	if err != nil {
+		log.Printf("Invalid task ID: %s", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": "Invalid task ID"})
+		return
+	}
+
+	// mock data for completion
+	completionPayload := ""
+	err = t.service.CompleteTask(id, completionPayload)
+	if err != nil {
+		log.Printf("Error completing task: %s", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Internal Server Error"})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"message": "Task completed"})
+}
+
+func (t *taskHandler) handleFailTask(ctx *gin.Context) {
+	id, err := uuid.Parse(ctx.Param("id"))
+	if err != nil {
+		log.Printf("Invalid task ID: %s", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": "Invalid task ID"})
+		return
+	}
+
+	// mock reason for failure
+	reason := "Simulated failure"
+	err = t.service.FailTask(id, reason)
+	if err != nil {
+		log.Printf("Error failing task: %s", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Internal Server Error"})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"message": "Task marked as failed"})
 }
