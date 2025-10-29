@@ -1,64 +1,216 @@
 openapi: '3.0.0'
 info:
-  title: API Title
+  title: Nimbus Workflow API
   version: '0.1.0'
+  description: API for managing workflow tasks
 servers:
-  - url: https://localhost:8080/v1
+  - url: http://localhost:8080/api/v1
 paths:
-    /tasks:
-      post:
-        summary: Create a new task
-        requestBody:
-          required: true
+  /tasks:
+    post:
+      summary: Create a new task
+      description: Creates a new task with the provided payload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskRequest'
+      responses:
+        '201':
+          description: Task created successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateTaskRequest'
-        responses:
-          '201':
-            description: Task created successfully
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/CreateTaskResponse'
-          '400':
-            $ref: '#/components/responses/400'
-          '500':
-            $ref: '#/components/responses/500'
+                $ref: '#/components/schemas/TaskResponse'
+        '400':
+          $ref: '#/components/responses/400'
+        '500':
+          $ref: '#/components/responses/500'
+    get:
+      summary: Get all tasks
+      description: Retrieves a list of all tasks
+      responses:
+        '200':
+          description: List of tasks retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TasksListResponse'
+        '500':
+          $ref: '#/components/responses/500'
+  /tasks/{id}:
+    get:
+      summary: Get a specific task
+      description: Retrieves a task by its ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the task to retrieve
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Task retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+  /tasks/{id}/start:
+    post:
+      summary: Start a task
+      description: Transitions a task to IN_PROGRESS status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the task to start
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Task started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '422':
+          $ref: '#/components/responses/422'
+        '500':
+          $ref: '#/components/responses/500'
+  /tasks/{id}/complete:
+    post:
+      summary: Complete a task
+      description: Transitions a task to COMPLETED status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the task to complete
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Task completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '422':
+          $ref: '#/components/responses/422'
+        '500':
+          $ref: '#/components/responses/500'
+  /tasks/{id}/fail:
+    post:
+      summary: Fail a task
+      description: Transitions a task to FAILED status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the task to fail
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Task marked as failed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '422':
+          $ref: '#/components/responses/422'
+        '500':
+          $ref: '#/components/responses/500'
 
 components:
   schemas:
     CreateTaskRequest:
       type: object
+      required:
+        - payload
       properties:
-        items:
-          type: array
-          description: List of task items to create
-          items:
-            $ref: '#/components/schemas/TaskItem'
-    CreateTaskResponse:
-      type: object
-      properties:
-        id:
-          $ref: '#/components/schemas/Id'
+        payload:
+          type: string
+          description: The task payload data
+      example:
+        payload: "Sample task payload"
     Task:
       type: object
       properties:
         id:
-          $ref: '#/components/schemas/Id'
-        items:
-          type: array
-          description: List of task items
-          items:
-            $ref: '#/components/schemas/TaskItem'
-    TaskItem:
+          type: string
+          format: uuid
+          description: The unique identifier of the task
+        payload:
+          type: string
+          description: The task payload data
+        status:
+          type: string
+          enum: [NEW, IN_PROGRESS, COMPLETED, FAILED]
+          description: Current status of the task
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when the task was created
+        fail_reason:
+          type: string
+          description: Reason for task failure (present only if status is FAILED)
+      example:
+        id: "123e4567-e89b-12d3-a456-426614174000"
+        payload: "Sample task payload"
+        status: "NEW"
+        created_at: "2025-10-29T10:30:00Z"
+        fail_reason: ""
+    TaskResponse:
       type: object
       properties:
-        id:
-          $ref: '#/components/schemas/Id'
-    Id:
-      type: string
-      description: The unique identifier
+        data:
+          $ref: '#/components/schemas/Task'
+    TasksListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Task'
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Response message
+      example:
+        message: "Task started"
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Error message describing what went wrong
     
   responses:
     400:
@@ -66,18 +218,30 @@ components:
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              error:
-                type: string
-                description: Error message describing the bad request
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            message: "Invalid task ID"
+    404:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            message: "Task not found"
+    422:
+      description: Unprocessable Entity
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            message: "Cannot start task in current state"
     500:        
       description: Internal Server Error
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              error:
-                type: string
-                description: Error message describing the server error
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            message: "Internal Server Error"
