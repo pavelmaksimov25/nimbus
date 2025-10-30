@@ -41,7 +41,7 @@ func (t *taskHandler) handleCreateTask(ctx *gin.Context) {
 		return
 	}
 
-	taskEntity, err := t.service.CreateTask(task.Payload)
+	taskEntity, err := t.service.CreateTask(&task)
 	if err != nil {
 		log.Printf("Error storing task: %s", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Internal Server Error"})

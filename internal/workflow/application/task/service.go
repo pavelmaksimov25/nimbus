@@ -10,7 +10,7 @@ import (
 )
 
 type Service interface {
-	CreateTask(payload string) (*entity.Task, error)
+	CreateTask(task *entity.Task) (*entity.Task, error)
 	GetTasks() []entity.Task
 	GetTask(id uuid.UUID) (*entity.Task, error)
 	StartTask(id uuid.UUID) error
@@ -28,14 +28,10 @@ func NewTaskService(store store.TaskStorage) Service {
 	}
 }
 
-func (ts *taskService) CreateTask(payload string) (*entity.Task, error) {
-	id := uuid.New()
-	task := &entity.Task{
-		ID:        id,
-		Payload:   payload,
-		Status:    entity.StatusNew,
-		CreatedAt: time.Now(),
-	}
+func (ts *taskService) CreateTask(task *entity.Task) (*entity.Task, error) {
+	task.ID = uuid.New()
+	task.Status = entity.StatusNew
+	task.CreatedAt = time.Now()
 
 	return ts.store.StoreTask(task)
 }

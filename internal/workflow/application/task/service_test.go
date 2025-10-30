@@ -15,15 +15,18 @@ func TestTaskService_CreateTask(t *testing.T) {
 	// Arrange
 	taskStore := store.NewTaskStorageInMemory()
 	taskService := NewTaskService(taskStore)
-	payload := "Test Payload"
+	task := &entity.Task{
+		Payload:    "Test Payload",
+		WorkflowID: uuid.New(),
+	}
 
 	// Act
-	task, err := taskService.CreateTask(payload)
+	task, err := taskService.CreateTask(task)
 
 	// Assert
 	assert.NoError(t, err)
 	assert.IsType(t, uuid.UUID{}, task.ID)
-	assert.Equal(t, payload, task.Payload)
+	assert.Equal(t, "Test Payload", task.Payload)
 	assert.Equal(t, entity.StatusNew, task.Status)
 }
 
@@ -32,9 +35,10 @@ func TestTaskService_GetTasks(t *testing.T) {
 	taskStore := store.NewTaskStorageInMemory()
 	taskService := NewTaskService(taskStore)
 	task := &entity.Task{
-		ID:      uuid.New(),
-		Payload: "Test Payload",
-		Status:  entity.StatusNew,
+		ID:         uuid.New(),
+		Payload:    "Test Payload",
+		Status:     entity.StatusNew,
+		WorkflowID: uuid.New(),
 	}
 
 	taskStore.StoreTask(task)
@@ -46,6 +50,7 @@ func TestTaskService_GetTasks(t *testing.T) {
 	assert.Len(t, tasks, 1)
 	assert.Equal(t, task.Payload, tasks[0].Payload)
 	assert.Equal(t, task.Status, tasks[0].Status)
+	assert.Equal(t, task.WorkflowID, tasks[0].WorkflowID)
 }
 
 func TestTaskService_GetTask(t *testing.T) {
@@ -53,9 +58,10 @@ func TestTaskService_GetTask(t *testing.T) {
 	taskStore := store.NewTaskStorageInMemory()
 	taskService := NewTaskService(taskStore)
 	task := &entity.Task{
-		ID:      uuid.New(),
-		Payload: "Test Payload",
-		Status:  entity.StatusNew,
+		ID:         uuid.New(),
+		Payload:    "Test Payload",
+		Status:     entity.StatusNew,
+		WorkflowID: uuid.New(),
 	}
 
 	taskStore.StoreTask(task)
@@ -67,6 +73,7 @@ func TestTaskService_GetTask(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, task.Payload, retrievedTask.Payload)
 	assert.Equal(t, task.Status, retrievedTask.Status)
+	assert.Equal(t, task.WorkflowID, retrievedTask.WorkflowID)
 }
 
 func TestTaskService_GetTask_NotFound(t *testing.T) {
@@ -88,9 +95,10 @@ func TestTaskService_StartTask(t *testing.T) {
 	taskStore := store.NewTaskStorageInMemory()
 	taskService := NewTaskService(taskStore)
 	existingTask := &entity.Task{
-		ID:      uuid.New(),
-		Payload: "Test Payload",
-		Status:  entity.StatusNew,
+		ID:         uuid.New(),
+		Payload:    "Test Payload",
+		Status:     entity.StatusNew,
+		WorkflowID: uuid.New(),
 	}
 	taskStore.StoreTask(existingTask)
 
@@ -105,19 +113,22 @@ func TestTaskService_StartTask_InvalidTaskStatus(t *testing.T) {
 	// Arrange
 	tests := []entity.Task{
 		{
-			ID:      uuid.New(),
-			Payload: "test status in_progress",
-			Status:  entity.StatusInProgress,
+			ID:         uuid.New(),
+			Payload:    "test status in_progress",
+			Status:     entity.StatusInProgress,
+			WorkflowID: uuid.New(),
 		},
 		{
-			ID:      uuid.New(),
-			Payload: "test status failed",
-			Status:  entity.StatusFailed,
+			ID:         uuid.New(),
+			Payload:    "test status failed",
+			Status:     entity.StatusFailed,
+			WorkflowID: uuid.New(),
 		},
 		{
-			ID:      uuid.New(),
-			Payload: "test status completed",
-			Status:  entity.StatusCompleted,
+			ID:         uuid.New(),
+			Payload:    "test status completed",
+			Status:     entity.StatusCompleted,
+			WorkflowID: uuid.New(),
 		},
 	}
 
@@ -154,9 +165,10 @@ func TestTaskService_CompleteTask(t *testing.T) {
 	taskStore := store.NewTaskStorageInMemory()
 	taskService := NewTaskService(taskStore)
 	inProgressTask := &entity.Task{
-		ID:      uuid.New(),
-		Payload: "Test Payload",
-		Status:  entity.StatusInProgress,
+		ID:         uuid.New(),
+		Payload:    "Test Payload",
+		Status:     entity.StatusInProgress,
+		WorkflowID: uuid.New(),
 	}
 	taskStore.StoreTask(inProgressTask)
 
@@ -168,25 +180,29 @@ func TestTaskService_CompleteTask(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, entity.StatusCompleted, task.Status)
 	assert.Equal(t, "Test Payload - Additional Payload", task.Payload)
+	assert.Equal(t, inProgressTask.WorkflowID, task.WorkflowID)
 }
 
 func TestTaskService_CompleteTask_InvalidTaskStatus(t *testing.T) {
 	// Arrange
 	tests := []entity.Task{
 		{
-			ID:      uuid.New(),
-			Payload: "test status new",
-			Status:  entity.StatusNew,
+			ID:         uuid.New(),
+			Payload:    "test status new",
+			Status:     entity.StatusNew,
+			WorkflowID: uuid.New(),
 		},
 		{
-			ID:      uuid.New(),
-			Payload: "test status failed",
-			Status:  entity.StatusFailed,
+			ID:         uuid.New(),
+			Payload:    "test status failed",
+			Status:     entity.StatusFailed,
+			WorkflowID: uuid.New(),
 		},
 		{
-			ID:      uuid.New(),
-			Payload: "test status completed",
-			Status:  entity.StatusCompleted,
+			ID:         uuid.New(),
+			Payload:    "test status completed",
+			Status:     entity.StatusCompleted,
+			WorkflowID: uuid.New(),
 		},
 	}
 
