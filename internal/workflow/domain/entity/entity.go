@@ -9,7 +9,6 @@ import (
 type Workflow struct {
 	ID        uuid.UUID
 	Name      string
-	Tasks     []Task
 	CreatedAt time.Time
 }
 
@@ -19,6 +18,7 @@ type Task struct {
 	Status     TaskStatus `json:"status,omitempty"`
 	CreatedAt  time.Time  `json:"created_at,omitempty"`
 	FailReason string     `json:"fail_reason,omitempty"`
+	WorkflowID *uuid.UUID `json:"workflow_id,omitempty"` // todo :: make it required and adjust task logic
 }
 
 type TaskStatus string

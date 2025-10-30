@@ -58,7 +58,7 @@ The project follows **Clean Architecture** principles with clear separation of c
 - Extensible architecture for future adapters (queue, database)
 
 ## Todo
-
+- [ ] Implement Workflow simple crud
 - [ ] Implement persistent storage (database)
 - [ ] Add workflow orchestration capabilities
 - [ ] Implement task queue system

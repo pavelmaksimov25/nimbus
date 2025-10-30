@@ -14,7 +14,6 @@ import (
 )
 
 type taskHandler struct {
-	// for testing purposes the store will be used directly
 	service task.Service
 }
 
