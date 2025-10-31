@@ -6,7 +6,6 @@ import (
 	"github.com/google/uuid"
 )
 
-
 type WorkflowService interface {
 	CreateWorkflow(name string) (*entity.Workflow, error)
 }

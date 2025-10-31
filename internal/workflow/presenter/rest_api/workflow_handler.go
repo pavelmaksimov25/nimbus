@@ -11,7 +11,6 @@ type workflowHandler struct {
 	service service.WorkflowService
 }
 
-
 func NewWorkflowHandler(service service.WorkflowService) *workflowHandler {
 	return &workflowHandler{
 		service: service,

@@ -8,14 +8,14 @@ import (
 
 type Workflow struct {
 	ID        uuid.UUID `json:"id,omitempty"`
-	Name      string     `json:"name"`
-	CreatedAt time.Time  `json:"created_at,omitempty"`
+	Name      string    `json:"name"`
+	CreatedAt time.Time `json:"created_at,omitempty"`
 }
 
 type Task struct {
 	ID         uuid.UUID  `json:"id,omitempty"`
 	Payload    string     `json:"payload"`
-	WorkflowID uuid.UUID `json:"workflow_id"`
+	WorkflowID uuid.UUID  `json:"workflow_id"`
 	Status     TaskStatus `json:"status"`
 	CreatedAt  time.Time  `json:"created_at,omitempty"`
 	FailReason string     `json:"fail_reason,omitempty"`

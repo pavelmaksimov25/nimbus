@@ -5,14 +5,17 @@ import (
 	"nimbus/internal/workflow/domain/repository"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type taskRepository struct {
-	store repository.TaskRepository
+	conn *gorm.DB
 }
 
-func NewTaskService() repository.TaskRepository {
-	return &taskRepository{}
+func NewTaskRepository(conn *gorm.DB) repository.TaskRepository {
+	return &taskRepository{
+		conn: conn,
+	}
 }
 
 func (t *taskRepository) StoreTask(task *entity.Task) (*entity.Task, error) {
