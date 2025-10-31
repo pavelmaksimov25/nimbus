@@ -1,0 +1,48 @@
+services:
+  database:
+    image: postgres:16-alpine
+    container_name: nimbus-db
+    environment:
+      POSTGRES_USER: nimbus
+      POSTGRES_PASSWORD: nimbus_password
+      POSTGRES_DB: nimbus_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nimbus"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nimbus-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nimbus-app
+    environment:
+      - DB_HOST=database
+      - DB_PORT=5432
+      - DB_USER=nimbus
+      - DB_PASSWORD=nimbus_password
+      - DB_NAME=nimbus_db
+      - PORT=8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - nimbus-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  nimbus-network:
+    driver: bridge

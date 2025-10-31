@@ -6,10 +6,53 @@ Nimbus is a distributed workflow engine built with Go that provides task managem
 
 ## Requirements
 
-- Go 1.23.5 or higher
-- No external database required (uses in-memory storage)
+- Go 1.24.0 or higher
+- Docker and Docker Compose (for containerized deployment)
+- PostgreSQL 16 (when using database, or use Docker Compose)
 
 ## Installation
+
+### Option 1: Using Docker Compose (Recommended)
+
+1. Clone the repository:
+```bash
+git clone git@github.com:pavelmaksimov25/nimbus.git
+cd nimbus
+```
+
+2. Start all services (app + PostgreSQL database):
+```bash
+docker-compose up -d
+```
+
+3. View logs:
+```bash
+docker-compose logs -f
+```
+
+4. Stop services:
+```bash
+docker-compose down
+```
+
+The server will be available at `http://localhost:8080`
+
+**Environment Variables (configured in docker-compose.yml):**
+- `DB_HOST=database`
+- `DB_PORT=5432`
+- `DB_USER=nimbus`
+- `DB_PASSWORD=nimbus_password`
+- `DB_NAME=nimbus_db`
+
+### Option 2: Using Docker Only
+
+Build and run the application container:
+```bash
+docker build -t nimbus:latest .
+docker run -p 8080:8080 nimbus:latest
+```
+
+### Option 3: Local Development
 
 1. Clone the repository:
 ```bash
@@ -57,8 +100,17 @@ The project follows **Clean Architecture** principles with clear separation of c
 - RESTful API with proper error handling
 - Extensible architecture for future adapters (queue, database)
 
+## Docker Support
+
+The project includes Docker support with multi-stage builds for optimal image size and security:
+
+- **Dockerfile**: Multi-stage build with Go 1.24 and Alpine Linux
+- **docker-compose.yml**: Orchestrates app and PostgreSQL 16 database
+- Non-root user execution for security
+- Health checks for database readiness
+- Persistent volume for database data
+
 ## Todo
-- [ ] Implement Workflow simple crud
 - [ ] Implement persistent storage (database)
 - [ ] Add workflow orchestration capabilities
 - [ ] Implement task queue system
@@ -66,6 +118,5 @@ The project follows **Clean Architecture** principles with clear separation of c
 - [ ] Add logging and monitoring
 - [ ] Implement task retry mechanisms
 - [ ] Add comprehensive API documentation
-- [ ] Add Docker support
 - [ ] Implement distributed task execution
 - [ ] Add metrics and health check endpoints
