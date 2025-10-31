@@ -22,6 +22,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: development
     container_name: nimbus-app
     environment:
       - DB_HOST=database
@@ -32,6 +33,9 @@ services:
       - PORT=8080
     ports:
       - "8080:8080"
+    volumes:
+      - .:/app
+      - /app/tmp
     depends_on:
       database:
         condition: service_healthy
