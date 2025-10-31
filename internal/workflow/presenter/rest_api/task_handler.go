@@ -8,16 +8,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
-	task "nimbus/internal/workflow/application/task"
 	"nimbus/internal/workflow/domain/entity"
+	"nimbus/internal/workflow/domain/service"
 	"nimbus/internal/workflow/domain/types"
 )
 
 type taskHandler struct {
-	service task.Service
+	service service.TaskService
 }
 
-func NewTaskHandler(service task.Service) *taskHandler {
+func NewTaskHandler(service service.TaskService) *taskHandler {
 	return &taskHandler{
 		service: service,
 	}

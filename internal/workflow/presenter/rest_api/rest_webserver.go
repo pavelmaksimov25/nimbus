@@ -1,8 +1,7 @@
 package restapi
 
 import (
-	"nimbus/internal/workflow/application/task"
-	"nimbus/internal/workflow/application/workflow"
+	"nimbus/internal/workflow/domain/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -21,7 +20,7 @@ func NewRestApiServer() *ApiServer {
 	}
 }
 
-func (t *ApiServer) RegisterRoutes(taskService task.Service, workflowService workflow.WorkflowService) {
+func (t *ApiServer) RegisterRoutes(taskService service.TaskService, workflowService service.WorkflowService) {
 	rg := t.router.Group(routePrefix)
 
 	taskHandler := NewTaskHandler(taskService)

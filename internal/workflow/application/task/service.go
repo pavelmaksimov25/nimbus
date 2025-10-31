@@ -3,26 +3,18 @@ package task
 import (
 	store "nimbus/internal/workflow/adapters/storage"
 	entity "nimbus/internal/workflow/domain/entity"
+	"nimbus/internal/workflow/domain/service"
 	"nimbus/internal/workflow/domain/types"
 	"time"
 
 	"github.com/google/uuid"
 )
 
-type Service interface {
-	CreateTask(task *entity.Task) (*entity.Task, error)
-	GetTasks() []entity.Task
-	GetTask(id uuid.UUID) (*entity.Task, error)
-	StartTask(id uuid.UUID) error
-	CompleteTask(id uuid.UUID, additionalPayload string) error
-	FailTask(id uuid.UUID, reason string) error
-}
-
 type taskService struct {
 	store store.TaskStorage
 }
 
-func NewTaskService(store store.TaskStorage) Service {
+func NewTaskService(store store.TaskStorage) service.TaskService {
 	return &taskService{
 		store: store,
 	}

@@ -3,21 +3,17 @@ package workflow
 import (
 	"nimbus/internal/workflow/adapters/storage"
 	"nimbus/internal/workflow/domain/entity"
+	"nimbus/internal/workflow/domain/service"
 	"time"
 
 	"github.com/google/uuid"
 )
 
-
-type WorkflowService interface {
-	CreateWorkflow(name string) (*entity.Workflow, error)
-}
-
 type workflowService struct {
 	storage storage.WorkflowStorage
 }
 
-func NewWorkflowService(storage storage.WorkflowStorage) WorkflowService {
+func NewWorkflowService(storage storage.WorkflowStorage) service.WorkflowService {
 	return &workflowService{
 		storage: storage,
 	}

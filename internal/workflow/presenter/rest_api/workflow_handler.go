@@ -1,18 +1,18 @@
 package restapi
 
 import (
-	"nimbus/internal/workflow/application/workflow"
 	"nimbus/internal/workflow/domain/entity"
+	"nimbus/internal/workflow/domain/service"
 
 	"github.com/gin-gonic/gin"
 )
 
 type workflowHandler struct {
-	service workflow.WorkflowService
+	service service.WorkflowService
 }
 
 
-func NewWorkflowHandler(service workflow.WorkflowService) *workflowHandler {
+func NewWorkflowHandler(service service.WorkflowService) *workflowHandler {
 	return &workflowHandler{
 		service: service,
 	}
