@@ -9,8 +9,52 @@ Nimbus is a distributed workflow engine built with Go that provides task managem
 - Go 1.24.0 or higher
 - Docker and Docker Compose (for containerized deployment)
 - PostgreSQL 16 (when using database, or use Docker Compose)
+- Make (optional, but recommended for easier project management)
 
 ## Installation
+
+### Quick Start with Make (Recommended)
+
+The project includes a Makefile for easy setup and management. To see all available commands:
+
+```bash
+make help
+```
+
+#### Complete Setup
+
+```bash
+# Clone the repository
+git clone git@github.com:pavelmaksimov25/nimbus.git
+cd nimbus
+
+# Run complete setup (installs dependencies and starts services)
+make setup
+
+# Start development environment (database + migrations + application)
+make dev
+```
+
+#### Common Make Commands
+
+| Command | Description |
+|---------|-------------|
+| `make help` | Display all available commands |
+| `make install` | Install dependencies and setup environment |
+| `make run` | Run the application locally |
+| `make build` | Build the application binary |
+| `make migrate` | Run database migrations |
+| `make migrate-create name=<name>` | Create a new migration |
+| `make docker-up` | Start all services with docker-compose |
+| `make docker-down` | Stop all services |
+| `make docker-logs` | View docker-compose logs |
+| `make db-start` | Start only the database |
+| `make db-shell` | Open PostgreSQL shell |
+| `make test` | Run tests |
+| `make docs` | Show documentation information |
+| `make clean` | Clean build artifacts |
+
+For a complete list of commands and their descriptions, run `make help`.
 
 ### Option 1: Using Docker Compose (Recommended)
 
@@ -169,7 +213,22 @@ The project includes Docker support with multi-stage builds for optimal image si
 
 ## Database Migrations
 
-The project uses [golang-migrate](https://github.com/golang-migrate/migrate) for database schema management. Migrations run automatically when using Docker Compose.
+The project uses [golang-migrate](https://github.com/golang-migrate/migrate) for database schema management. Migrations run automatically when using Docker Compose or Make commands.
+
+**Quick Migration Commands:**
+```bash
+# Run all pending migrations
+make migrate
+
+# Create a new migration
+make migrate-create name=add_user_table
+
+# Rollback last migration
+make migrate-down
+
+# Check current migration version
+make migrate-version
+```
 
 For detailed information on creating and managing migrations, see [Migration Documentation](docs/migration.md).
 
