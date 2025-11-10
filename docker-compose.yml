@@ -18,30 +18,23 @@ services:
     networks:
       - nimbus-network
 
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: development
-    container_name: nimbus-app
-    environment:
-      - DB_HOST=database
-      - DB_PORT=5432
-      - DB_USER=nimbus
-      - DB_PASSWORD=nimbus_password
-      - DB_NAME=nimbus_db
-      - PORT=8080
-    ports:
-      - "8080:8080"
+  migration:
+    image: migrate/migrate
+    container_name: nimbus-migration
     volumes:
-      - .:/app
-      - /app/tmp
+      - ./migrations:/migrations 
+    environment:
+      MIGRATE_CONN_STR: "postgres://nimbus:nimbus_password@database:5432/nimbus_db?sslmode=disable&charset=utf8mb4&parseTime=True&loc=Local"
+    command: >
+      /bin/sh -c '
+      echo "Waiting a few seconds for the DB to be fully available..." &&
+      sleep 5 &&
+      migrate -path /migrations -database "$MIGRATE_CONN_STR" up
+      '
     depends_on:
       database:
         condition: service_healthy
-    networks:
-      - nimbus-network
-    restart: unless-stopped
+    restart: "no"
 
 volumes:
   postgres_data:

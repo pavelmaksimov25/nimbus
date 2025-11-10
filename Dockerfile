@@ -1,14 +1,3 @@
-FROM golang:1.24-alpine AS development
-
-RUN apk add --no-cache git ca-certificates && \
-    go install github.com/air-verse/air@latest
-
-WORKDIR /app
-
-EXPOSE 8080
-
-CMD ["air", "-c", ".air.toml"]
-
 FROM golang:1.24-alpine AS builder
 
 RUN apk add --no-cache git ca-certificates
