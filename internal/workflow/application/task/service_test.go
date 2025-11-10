@@ -3,84 +3,114 @@ package task
 import (
 	"testing"
 
-	store "nimbus/internal/workflow/adapters/storage"
 	"nimbus/internal/workflow/domain/entity"
+	"nimbus/internal/workflow/domain/repository/mocks"
 	"nimbus/internal/workflow/domain/types"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 func TestTaskService_CreateTask(t *testing.T) {
 	// Arrange
-	taskStore := store.NewTaskStorageInMemory()
-	taskService := NewTaskService(taskStore)
-	task := &entity.Task{
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := mocks.NewMockTaskRepository(ctrl)
+	taskService := NewTaskService(mockRepo)
+
+	inputTask := &entity.Task{
 		Payload:    "Test Payload",
 		WorkflowID: uuid.New(),
 	}
 
+	mockRepo.EXPECT().
+		StoreTask(gomock.Any()).
+		DoAndReturn(func(task *entity.Task) (*entity.Task, error) {
+			return task, nil
+		})
+
 	// Act
-	task, err := taskService.CreateTask(task)
+	resultTask, err := taskService.CreateTask(inputTask)
 
 	// Assert
 	assert.NoError(t, err)
-	assert.IsType(t, uuid.UUID{}, task.ID)
-	assert.Equal(t, "Test Payload", task.Payload)
-	assert.Equal(t, entity.StatusNew, task.Status)
+	assert.IsType(t, uuid.UUID{}, resultTask.ID)
+	assert.Equal(t, "Test Payload", resultTask.Payload)
+	assert.Equal(t, entity.StatusNew, resultTask.Status)
 }
 
 func TestTaskService_GetTasks(t *testing.T) {
 	// Arrange
-	taskStore := store.NewTaskStorageInMemory()
-	taskService := NewTaskService(taskStore)
-	task := &entity.Task{
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := mocks.NewMockTaskRepository(ctrl)
+	taskService := NewTaskService(mockRepo)
+
+	expectedTask := entity.Task{
 		ID:         uuid.New(),
 		Payload:    "Test Payload",
 		Status:     entity.StatusNew,
 		WorkflowID: uuid.New(),
 	}
 
-	taskStore.StoreTask(task)
+	mockRepo.EXPECT().
+		GetTasks().
+		Return([]entity.Task{expectedTask})
 
 	// Act
 	tasks := taskService.GetTasks()
 
 	// Assert
 	assert.Len(t, tasks, 1)
-	assert.Equal(t, task.Payload, tasks[0].Payload)
-	assert.Equal(t, task.Status, tasks[0].Status)
-	assert.Equal(t, task.WorkflowID, tasks[0].WorkflowID)
+	assert.Equal(t, expectedTask.Payload, tasks[0].Payload)
+	assert.Equal(t, expectedTask.Status, tasks[0].Status)
+	assert.Equal(t, expectedTask.WorkflowID, tasks[0].WorkflowID)
 }
 
 func TestTaskService_GetTask(t *testing.T) {
 	// Arrange
-	taskStore := store.NewTaskStorageInMemory()
-	taskService := NewTaskService(taskStore)
-	task := &entity.Task{
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := mocks.NewMockTaskRepository(ctrl)
+	taskService := NewTaskService(mockRepo)
+
+	expectedTask := &entity.Task{
 		ID:         uuid.New(),
 		Payload:    "Test Payload",
 		Status:     entity.StatusNew,
 		WorkflowID: uuid.New(),
 	}
 
-	taskStore.StoreTask(task)
+	mockRepo.EXPECT().
+		GetTask(expectedTask.ID).
+		Return(expectedTask)
 
 	// Act
-	retrievedTask, err := taskService.GetTask(task.ID)
+	retrievedTask, err := taskService.GetTask(expectedTask.ID)
 
 	// Assert
 	assert.NoError(t, err)
-	assert.Equal(t, task.Payload, retrievedTask.Payload)
-	assert.Equal(t, task.Status, retrievedTask.Status)
-	assert.Equal(t, task.WorkflowID, retrievedTask.WorkflowID)
+	assert.Equal(t, expectedTask.Payload, retrievedTask.Payload)
+	assert.Equal(t, expectedTask.Status, retrievedTask.Status)
+	assert.Equal(t, expectedTask.WorkflowID, retrievedTask.WorkflowID)
 }
 
 func TestTaskService_GetTask_NotFound(t *testing.T) {
 	// Arrange
-	taskStore := store.NewTaskStorageInMemory()
-	taskService := NewTaskService(taskStore)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := mocks.NewMockTaskRepository(ctrl)
+	taskService := NewTaskService(mockRepo)
 	nonExistentID := uuid.New()
+
+	mockRepo.EXPECT().
+		GetTask(nonExistentID).
+		Return(nil)
 
 	// Act
 	retrievedTask, err := taskService.GetTask(nonExistentID)
@@ -92,15 +122,26 @@ func TestTaskService_GetTask_NotFound(t *testing.T) {
 
 func TestTaskService_StartTask(t *testing.T) {
 	// Arrange
-	taskStore := store.NewTaskStorageInMemory()
-	taskService := NewTaskService(taskStore)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := mocks.NewMockTaskRepository(ctrl)
+	taskService := NewTaskService(mockRepo)
+
 	existingTask := &entity.Task{
 		ID:         uuid.New(),
 		Payload:    "Test Payload",
 		Status:     entity.StatusNew,
 		WorkflowID: uuid.New(),
 	}
-	taskStore.StoreTask(existingTask)
+
+	mockRepo.EXPECT().
+		GetTask(existingTask.ID).
+		Return(existingTask)
+
+	mockRepo.EXPECT().
+		UpdateTask(gomock.Any()).
+		Return(nil)
 
 	// Act
 	err := taskService.StartTask(existingTask.ID)
@@ -135,9 +176,16 @@ func TestTaskService_StartTask_InvalidTaskStatus(t *testing.T) {
 	for _, existingTask := range tests {
 		t.Run(existingTask.Payload, func(t *testing.T) {
 			// Arrange
-			taskStore := store.NewTaskStorageInMemory()
-			taskService := NewTaskService(taskStore)
-			taskStore.StoreTask(&existingTask)
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockRepo := mocks.NewMockTaskRepository(ctrl)
+			taskService := NewTaskService(mockRepo)
+
+			taskCopy := existingTask
+			mockRepo.EXPECT().
+				GetTask(existingTask.ID).
+				Return(&taskCopy)
 
 			// Act
 			err := taskService.StartTask(existingTask.ID)
@@ -150,11 +198,19 @@ func TestTaskService_StartTask_InvalidTaskStatus(t *testing.T) {
 
 func TestTaskService_StartTask_NotFound(t *testing.T) {
 	// Arrange
-	taskStore := store.NewTaskStorageInMemory()
-	taskService := NewTaskService(taskStore)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := mocks.NewMockTaskRepository(ctrl)
+	taskService := NewTaskService(mockRepo)
+	nonExistentID := uuid.New()
+
+	mockRepo.EXPECT().
+		GetTask(nonExistentID).
+		Return(nil)
 
 	// Act
-	err := taskService.StartTask(uuid.New())
+	err := taskService.StartTask(nonExistentID)
 
 	// Assert
 	assert.IsType(t, &types.RecordNotFoundError{}, err)
@@ -162,25 +218,38 @@ func TestTaskService_StartTask_NotFound(t *testing.T) {
 
 func TestTaskService_CompleteTask(t *testing.T) {
 	// Arrange
-	taskStore := store.NewTaskStorageInMemory()
-	taskService := NewTaskService(taskStore)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := mocks.NewMockTaskRepository(ctrl)
+	taskService := NewTaskService(mockRepo)
+
 	inProgressTask := &entity.Task{
 		ID:         uuid.New(),
 		Payload:    "Test Payload",
 		Status:     entity.StatusInProgress,
 		WorkflowID: uuid.New(),
 	}
-	taskStore.StoreTask(inProgressTask)
+
+	// First call for CompleteTask
+	mockRepo.EXPECT().
+		GetTask(inProgressTask.ID).
+		Return(inProgressTask).
+		Times(1)
+
+	mockRepo.EXPECT().
+		UpdateTask(gomock.Any()).
+		DoAndReturn(func(task *entity.Task) error {
+			assert.Equal(t, entity.StatusCompleted, task.Status)
+			assert.Equal(t, "Test Payload - Additional Payload", task.Payload)
+			return nil
+		})
 
 	// Act
 	err := taskService.CompleteTask(inProgressTask.ID, " - Additional Payload")
-	task, _ := taskService.GetTask(inProgressTask.ID)
 
 	// Assert
 	assert.Nil(t, err)
-	assert.Equal(t, entity.StatusCompleted, task.Status)
-	assert.Equal(t, "Test Payload - Additional Payload", task.Payload)
-	assert.Equal(t, inProgressTask.WorkflowID, task.WorkflowID)
 }
 
 func TestTaskService_CompleteTask_InvalidTaskStatus(t *testing.T) {
@@ -209,9 +278,16 @@ func TestTaskService_CompleteTask_InvalidTaskStatus(t *testing.T) {
 	for _, existingTask := range tests {
 		t.Run(existingTask.Payload, func(t *testing.T) {
 			// Arrange
-			taskStore := store.NewTaskStorageInMemory()
-			taskService := NewTaskService(taskStore)
-			taskStore.StoreTask(&existingTask)
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockRepo := mocks.NewMockTaskRepository(ctrl)
+			taskService := NewTaskService(mockRepo)
+
+			taskCopy := existingTask
+			mockRepo.EXPECT().
+				GetTask(existingTask.ID).
+				Return(&taskCopy)
 
 			// Act
 			err := taskService.CompleteTask(existingTask.ID, "")
@@ -224,11 +300,19 @@ func TestTaskService_CompleteTask_InvalidTaskStatus(t *testing.T) {
 
 func TestTaskService_CompleteTask_NotFound(t *testing.T) {
 	// Arrange
-	taskStore := store.NewTaskStorageInMemory()
-	taskService := NewTaskService(taskStore)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := mocks.NewMockTaskRepository(ctrl)
+	taskService := NewTaskService(mockRepo)
+	nonExistentID := uuid.New()
+
+	mockRepo.EXPECT().
+		GetTask(nonExistentID).
+		Return(nil)
 
 	// Act
-	err := taskService.CompleteTask(uuid.New(), "")
+	err := taskService.CompleteTask(nonExistentID, "")
 
 	// Assert
 	assert.IsType(t, &types.RecordNotFoundError{}, err)
@@ -236,32 +320,52 @@ func TestTaskService_CompleteTask_NotFound(t *testing.T) {
 
 func TestTaskService_FailTask(t *testing.T) {
 	// Arrange
-	taskStore := store.NewTaskStorageInMemory()
-	taskService := NewTaskService(taskStore)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := mocks.NewMockTaskRepository(ctrl)
+	taskService := NewTaskService(mockRepo)
+
 	inProgressTask := &entity.Task{
 		ID:      uuid.New(),
 		Payload: "Test Payload",
 		Status:  entity.StatusInProgress,
 	}
-	taskStore.StoreTask(inProgressTask)
+
+	mockRepo.EXPECT().
+		GetTask(inProgressTask.ID).
+		Return(inProgressTask)
+
+	mockRepo.EXPECT().
+		UpdateTask(gomock.Any()).
+		DoAndReturn(func(task *entity.Task) error {
+			assert.Equal(t, entity.StatusFailed, task.Status)
+			assert.Equal(t, "Some failure reason", task.FailReason)
+			return nil
+		})
 
 	// Act
 	err := taskService.FailTask(inProgressTask.ID, "Some failure reason")
-	task, _ := taskService.GetTask(inProgressTask.ID)
 
 	// Assert
 	assert.Nil(t, err)
-	assert.Equal(t, entity.StatusFailed, task.Status)
-	assert.Equal(t, "Some failure reason", task.FailReason)
 }
 
 func TestTaskService_FailTask_NotFound(t *testing.T) {
 	// Arrange
-	taskStore := store.NewTaskStorageInMemory()
-	taskService := NewTaskService(taskStore)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := mocks.NewMockTaskRepository(ctrl)
+	taskService := NewTaskService(mockRepo)
+	nonExistentID := uuid.New()
+
+	mockRepo.EXPECT().
+		GetTask(nonExistentID).
+		Return(nil)
 
 	// Act
-	err := taskService.FailTask(uuid.New(), "Some failure reason")
+	err := taskService.FailTask(nonExistentID, "Some failure reason")
 
 	// Assert
 	assert.IsType(t, &types.RecordNotFoundError{}, err)
@@ -290,9 +394,16 @@ func TestTaskService_FailTask_InvalidTaskStatus(t *testing.T) {
 	for _, existingTask := range tests {
 		t.Run(existingTask.Payload, func(t *testing.T) {
 			// Arrange
-			taskStore := store.NewTaskStorageInMemory()
-			taskService := NewTaskService(taskStore)
-			taskStore.StoreTask(&existingTask)
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockRepo := mocks.NewMockTaskRepository(ctrl)
+			taskService := NewTaskService(mockRepo)
+
+			taskCopy := existingTask
+			mockRepo.EXPECT().
+				GetTask(existingTask.ID).
+				Return(&taskCopy)
 
 			// Act
 			err := taskService.FailTask(existingTask.ID, "Some failure reason")
