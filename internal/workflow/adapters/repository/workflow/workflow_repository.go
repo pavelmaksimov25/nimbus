@@ -24,16 +24,20 @@ func (w *workflowRepository) StoreWorkflow(workflow *entity.Workflow) (*entity.W
 }
 
 func (w *workflowRepository) GetWorkflows() []entity.Workflow {
-	// Implementation goes here
-	return nil
+	var workflows []entity.Workflow
+	w.conn.Find(&workflows)
+	return workflows
 }
 
 func (w *workflowRepository) GetWorkflow(id uuid.UUID) *entity.Workflow {
-	// Implementation goes here
-	return nil
+	var workflow entity.Workflow
+	result := w.conn.First(&workflow, "id = ?", id)
+	if result.Error != nil {
+		return nil
+	}
+	return &workflow
 }
 
 func (w *workflowRepository) UpdateWorkflow(workflow *entity.Workflow) error {
-	// Implementation goes here
-	return nil
+	return w.conn.Save(workflow).Error
 }

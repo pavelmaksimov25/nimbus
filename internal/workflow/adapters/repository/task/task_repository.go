@@ -19,21 +19,25 @@ func NewTaskRepository(conn *gorm.DB) repository.TaskRepository {
 }
 
 func (t *taskRepository) StoreTask(task *entity.Task) (*entity.Task, error) {
-	// Implementation goes here
-	return nil, nil
+	err := t.conn.Create(&task).Error
+	return task, err
 }
 
 func (t *taskRepository) GetTasks() []entity.Task {
-	// Implementation goes here
-	return nil
+	var tasks []entity.Task
+	t.conn.Find(&tasks)
+	return tasks
 }
 
 func (t *taskRepository) GetTask(id uuid.UUID) *entity.Task {
-	// Implementation goes here
-	return nil
+	var task entity.Task
+	result := t.conn.First(&task, "id = ?", id)
+	if result.Error != nil {
+		return nil
+	}
+	return &task
 }
 
 func (t *taskRepository) UpdateTask(task *entity.Task) error {
-	// Implementation goes here
-	return nil
+	return t.conn.Save(task).Error
 }
