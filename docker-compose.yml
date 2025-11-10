@@ -1,0 +1,45 @@
+services:
+  database:
+    image: postgres:16-alpine
+    container_name: nimbus-db
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nimbus-network
+
+  migration:
+    image: migrate/migrate
+    container_name: nimbus-migration
+    volumes:
+      - ./migrations:/migrations 
+    env_file:
+      - .env
+    command: >
+      /bin/sh -c '
+      echo "Waiting a few seconds for the DB to be fully available..." &&
+      sleep 5 &&
+      migrate -path /migrations -database "$DB_DSN" up
+      '
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - nimbus-network
+    restart: "no"
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  nimbus-network:
+    driver: bridge
