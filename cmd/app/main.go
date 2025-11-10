@@ -2,10 +2,10 @@ package main
 
 import (
 	"log"
-	"nimbus/internal/workflow/adapters/storage"
 	"nimbus/internal/workflow/application/task"
 	"os"
 
+	taskRepository "nimbus/internal/workflow/adapters/repository/task"
 	workflow_repository "nimbus/internal/workflow/adapters/repository/workflow"
 	workflow_service "nimbus/internal/workflow/application/workflow"
 	restapi "nimbus/internal/workflow/presenter/rest_api"
@@ -21,12 +21,13 @@ func main() {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
-	taskStore := storage.NewTaskStorageInMemory()
-	taskService := task.NewTaskService(taskStore)
 
 	dsn := os.Getenv("DB_DSN")
-
 	dbConn, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+
+	taskRepository := taskRepository.NewTaskRepository(dbConn)
+	taskService := task.NewTaskService(taskRepository)
+
 	workflowRepository := workflow_repository.NewWorkflowRepository(dbConn)
 	workflowService := workflow_service.NewWorkflowService(workflowRepository)
 

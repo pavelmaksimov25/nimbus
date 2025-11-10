@@ -1,8 +1,8 @@
 package task
 
 import (
-	store "nimbus/internal/workflow/adapters/storage"
 	entity "nimbus/internal/workflow/domain/entity"
+	"nimbus/internal/workflow/domain/repository"
 	"nimbus/internal/workflow/domain/service"
 	"nimbus/internal/workflow/domain/types"
 	"time"
@@ -11,12 +11,12 @@ import (
 )
 
 type taskService struct {
-	store store.TaskStorage
+	repository repository.TaskRepository
 }
 
-func NewTaskService(store store.TaskStorage) service.TaskService {
+func NewTaskService(repository repository.TaskRepository) service.TaskService {
 	return &taskService{
-		store: store,
+		repository: repository,
 	}
 }
 
@@ -25,15 +25,15 @@ func (ts *taskService) CreateTask(task *entity.Task) (*entity.Task, error) {
 	task.Status = entity.StatusNew
 	task.CreatedAt = time.Now()
 
-	return ts.store.StoreTask(task)
+	return ts.repository.StoreTask(task)
 }
 
 func (ts *taskService) GetTasks() []entity.Task {
-	return ts.store.GetTasks()
+	return ts.repository.GetTasks()
 }
 
 func (ts *taskService) GetTask(id uuid.UUID) (*entity.Task, error) {
-	task := ts.store.GetTask(id)
+	task := ts.repository.GetTask(id)
 	if task == nil {
 		return nil, &types.RecordNotFoundError{Resource: "Task", ID: id.String()}
 	}
@@ -56,7 +56,7 @@ func (ts *taskService) StartTask(id uuid.UUID) error {
 
 	task.Status = entity.StatusInProgress
 
-	return ts.store.UpdateTask(task)
+	return ts.repository.UpdateTask(task)
 }
 
 func (ts *taskService) CompleteTask(id uuid.UUID, additionalPayload string) error {
@@ -76,7 +76,7 @@ func (ts *taskService) CompleteTask(id uuid.UUID, additionalPayload string) erro
 	task.Status = entity.StatusCompleted
 	task.Payload += additionalPayload
 
-	return ts.store.UpdateTask(task)
+	return ts.repository.UpdateTask(task)
 }
 
 func (ts *taskService) FailTask(id uuid.UUID, reason string) error {
@@ -98,5 +98,5 @@ func (ts *taskService) FailTask(id uuid.UUID, reason string) error {
 	task.Status = entity.StatusFailed
 	task.FailReason = reason
 
-	return ts.store.UpdateTask(task)
+	return ts.repository.UpdateTask(task)
 }
