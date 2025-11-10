@@ -233,7 +233,7 @@ make migrate-version
 For detailed information on creating and managing migrations, see [Migration Documentation](docs/migration.md).
 
 ## Todo
-- [ ] Implement persistent storage (database)
+- [x] Implement persistent storage (database)
 - [ ] Add workflow orchestration capabilities
 - [ ] Implement task queue system
 - [ ] Add authentication and authorization
