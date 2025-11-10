@@ -20,37 +20,63 @@ git clone git@github.com:pavelmaksimov25/nimbus.git
 cd nimbus
 ```
 
-2. Start all services (app + PostgreSQL database):
+2. Set up environment variables:
+```bash
+# Copy the example environment file
+cp .env.example .env
+
+# Edit .env if needed (default values work with docker-compose)
+```
+
+The default `.env` file contains:
+```
+DB_DSN="postgres://nimbus:nimbus_password@database:5432/nimbus_db?sslmode=disable&charset=utf8mb4&parseTime=True&loc=Local"
+```
+
+3. Start all services (database + migrations):
 ```bash
 docker-compose up -d
 ```
 
-3. View logs:
+The migrations will run automatically on startup.
+
+4. View logs:
 ```bash
 docker-compose logs -f
 ```
 
-4. Stop services:
+5. Stop services:
 ```bash
 docker-compose down
 ```
 
-The server will be available at `http://localhost:8080`
-
-**Environment Variables (configured in docker-compose.yml):**
-- `DB_HOST=database`
-- `DB_PORT=5432`
-- `DB_USER=nimbus`
-- `DB_PASSWORD=nimbus_password`
-- `DB_NAME=nimbus_db`
+**Note:** The current docker-compose setup runs the database and migrations. To run the application, use Option 2 or Option 3.
 
 ### Option 2: Using Docker Only
 
-Build and run the application container:
+1. Ensure the database is running:
+```bash
+docker-compose up -d database
+```
+
+2. Set up environment variables:
+```bash
+cp .env.example .env
+# Edit .env to use localhost instead of 'database' hostname
+```
+
+Update `.env` for local Docker:
+```
+DB_DSN="postgres://nimbus:nimbus_password@localhost:5432/nimbus_db?sslmode=disable&charset=utf8mb4&parseTime=True&loc=Local"
+```
+
+3. Build and run the application container:
 ```bash
 docker build -t nimbus:latest .
-docker run -p 8080:8080 nimbus:latest
+docker run -p 8080:8080 --env-file .env --network host nimbus:latest
 ```
+
+The server will be available at `http://localhost:8080`
 
 ### Option 3: Local Development
 
@@ -60,17 +86,48 @@ git clone git@github.com:pavelmaksimov25/nimbus.git
 cd nimbus
 ```
 
-2. Install dependencies:
+2. Set up environment variables:
+```bash
+cp .env.example .env
+```
+
+Update `.env` for local development:
+```
+DB_DSN="postgres://nimbus:nimbus_password@localhost:5432/nimbus_db?sslmode=disable&charset=utf8mb4&parseTime=True&loc=Local"
+```
+
+3. Start the database:
+```bash
+docker-compose up -d database
+```
+
+4. Run migrations:
+```bash
+docker-compose up migration
+```
+
+5. Install dependencies:
 ```bash
 go mod download
 ```
 
-3. Run the application:
+6. Run the application:
 ```bash
 go run cmd/app/main.go
 ```
 
 The server will start on `http://localhost:8080`
+
+**Environment Variables:**
+
+The application uses the [godotenv](https://github.com/joho/godotenv) library to load environment variables from a `.env` file. The following variables are supported:
+
+- `DB_DSN` - PostgreSQL connection string (required)
+
+**Example `.env` file:**
+```
+DB_DSN="postgres://nimbus:nimbus_password@localhost:5432/nimbus_db?sslmode=disable&charset=utf8mb4&parseTime=True&loc=Local"
+```
 
 ## Architecture
 
@@ -109,6 +166,12 @@ The project includes Docker support with multi-stage builds for optimal image si
 - Non-root user execution for security
 - Health checks for database readiness
 - Persistent volume for database data
+
+## Database Migrations
+
+The project uses [golang-migrate](https://github.com/golang-migrate/migrate) for database schema management. Migrations run automatically when using Docker Compose.
+
+For detailed information on creating and managing migrations, see [Migration Documentation](docs/migration.md).
 
 ## Todo
 - [ ] Implement persistent storage (database)
