@@ -29,7 +29,7 @@ type Workflow struct {
 }
 
 type Task struct {
-	ID         uuid.UUID  `json:"id,omitempty" gorm:"type:uuid;default:uuid_guuid_generate_v4()"`
+	ID         uuid.UUID  `json:"id,omitempty" gorm:"type:uuid;default:uuid_generate_v4()"`
 	Payload    string     `json:"payload" gorm:"type:jsonb"`
 	WorkflowID uuid.UUID  `json:"workflow_id" gorm:"type:uuid"`
 	Status     TaskStatus `json:"status" gorm:"type:TaskStatus;default:'NEW'"`
