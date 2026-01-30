@@ -19,8 +19,9 @@ make run              # Run app locally (requires DB running)
 # Database
 make db-start         # Start PostgreSQL via docker-compose
 make migrate          # Run pending migrations
-make migrate-create name=<name>  # Create new migration files
+make migrate-create name=<name>  # Create new migration file
 make migrate-down     # Rollback last migration
+make migrate-status   # Show migration status
 
 # Docker
 make docker-up        # Start all services
@@ -64,7 +65,7 @@ internal/workflow/
 ## Tech Stack
 
 - **Go 1.24**, **Gin** (HTTP), **GORM** (ORM), **PostgreSQL 16**
-- **golang-migrate** for SQL migrations (`migrations/` directory)
+- **goose** for SQL migrations (`migrations/` directory)
 - **uber/mock** for mock generation, **testify** for assertions
 - Config via `.env` file loaded with `godotenv` (key var: `DB_DSN`)
 

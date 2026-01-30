@@ -1,4 +1,4 @@
-.PHONY: help install migrate migrate-up migrate-down migrate-create migrate-version run build clean docker-build docker-up docker-down docker-logs test lint docs
+.PHONY: help install migrate migrate-up migrate-down migrate-create migrate-status run build clean docker-build docker-up docker-down docker-logs test lint docs
 
 # Default target
 .DEFAULT_GOAL := help
@@ -43,7 +43,7 @@ install: ## Install dependencies and setup environment
 	@go mod download
 	@go mod verify
 	@echo "$(COLOR_GREEN)Installing development tools...$(COLOR_RESET)"
-	@go install github.com/golang-migrate/migrate/v4/cmd/migrate@v4.19.0
+	@go install github.com/pressly/goose/v3/cmd/goose@latest
 	@echo "$(COLOR_GREEN)✓ Installation complete!$(COLOR_RESET)"
 
 run: ## Run the application locally
@@ -68,23 +68,13 @@ migrate: migrate-up ## Run all pending migrations (alias for migrate-up)
 
 migrate-up: ## Run all pending database migrations
 	@echo "$(COLOR_GREEN)Running migrations...$(COLOR_RESET)"
-	@if command -v migrate >/dev/null 2>&1; then \
-		migrate -path $(MIGRATIONS_DIR) -database "$(DB_DSN)" up; \
-		echo "$(COLOR_GREEN)✓ Migrations applied successfully!$(COLOR_RESET)"; \
-	else \
-		echo "$(COLOR_YELLOW)migrate CLI not found, using docker-compose...$(COLOR_RESET)"; \
-		docker-compose up migration; \
-	fi
+	@goose -dir $(MIGRATIONS_DIR) postgres "$(DB_DSN)" up
+	@echo "$(COLOR_GREEN)✓ Migrations applied successfully!$(COLOR_RESET)"
 
 migrate-down: ## Rollback the last migration
 	@echo "$(COLOR_YELLOW)Rolling back last migration...$(COLOR_RESET)"
-	@if command -v migrate >/dev/null 2>&1; then \
-		migrate -path $(MIGRATIONS_DIR) -database "$(DB_DSN)" down 1; \
-		echo "$(COLOR_GREEN)✓ Migration rolled back!$(COLOR_RESET)"; \
-	else \
-		echo "$(COLOR_YELLOW)migrate CLI not found, using docker-compose...$(COLOR_RESET)"; \
-		docker-compose run --rm migration -path /migrations -database "$(DB_DSN)" down 1; \
-	fi
+	@goose -dir $(MIGRATIONS_DIR) postgres "$(DB_DSN)" down
+	@echo "$(COLOR_GREEN)✓ Migration rolled back!$(COLOR_RESET)"
 
 migrate-create: ## Create a new migration file (usage: make migrate-create name=migration_name)
 	@if [ -z "$(name)" ]; then \
@@ -92,35 +82,17 @@ migrate-create: ## Create a new migration file (usage: make migrate-create name=
 		exit 1; \
 	fi
 	@echo "$(COLOR_GREEN)Creating migration: $(name)...$(COLOR_RESET)"
-	@if command -v migrate >/dev/null 2>&1; then \
-		migrate create -ext sql -dir $(MIGRATIONS_DIR) -seq $(name); \
-		echo "$(COLOR_GREEN)✓ Migration files created!$(COLOR_RESET)"; \
-	else \
-		echo "$(COLOR_YELLOW)migrate CLI not found, using docker-compose...$(COLOR_RESET)"; \
-		docker-compose run --rm migration create -ext sql -dir /migrations -seq $(name); \
-	fi
+	@goose -dir $(MIGRATIONS_DIR) -s create $(name) sql
+	@echo "$(COLOR_GREEN)✓ Migration file created!$(COLOR_RESET)"
 
-migrate-version: ## Show current migration version
-	@echo "$(COLOR_BLUE)Current migration version:$(COLOR_RESET)"
-	@if command -v migrate >/dev/null 2>&1; then \
-		migrate -path $(MIGRATIONS_DIR) -database "$(DB_DSN)" version; \
-	else \
-		echo "$(COLOR_YELLOW)migrate CLI not found, using docker-compose...$(COLOR_RESET)"; \
-		docker-compose run --rm migration -path /migrations -database "$(DB_DSN)" version; \
-	fi
+migrate-status: ## Show migration status
+	@echo "$(COLOR_BLUE)Migration status:$(COLOR_RESET)"
+	@goose -dir $(MIGRATIONS_DIR) postgres "$(DB_DSN)" status
 
-migrate-force: ## Force set migration version (usage: make migrate-force version=1)
-	@if [ -z "$(version)" ]; then \
-		echo "$(COLOR_YELLOW)Usage: make migrate-force version=VERSION_NUMBER$(COLOR_RESET)"; \
-		exit 1; \
-	fi
-	@echo "$(COLOR_YELLOW)Forcing migration version to $(version)...$(COLOR_RESET)"
-	@if command -v migrate >/dev/null 2>&1; then \
-		migrate -path $(MIGRATIONS_DIR) -database "$(DB_DSN)" force $(version); \
-		echo "$(COLOR_GREEN)✓ Migration version forced!$(COLOR_RESET)"; \
-	else \
-		docker-compose run --rm migration -path /migrations -database "$(DB_DSN)" force $(version); \
-	fi
+migrate-redo: ## Re-run the latest migration
+	@echo "$(COLOR_YELLOW)Re-running latest migration...$(COLOR_RESET)"
+	@goose -dir $(MIGRATIONS_DIR) postgres "$(DB_DSN)" redo
+	@echo "$(COLOR_GREEN)✓ Migration re-applied!$(COLOR_RESET)"
 
 ##@ Docker
 

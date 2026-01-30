@@ -213,7 +213,7 @@ The project includes Docker support with multi-stage builds for optimal image si
 
 ## Database Migrations
 
-The project uses [golang-migrate](https://github.com/golang-migrate/migrate) for database schema management. Migrations run automatically when using Docker Compose or Make commands.
+The project uses [goose](https://github.com/pressly/goose) for database schema management. Migrations run automatically when using Docker Compose or Make commands.
 
 **Quick Migration Commands:**
 ```bash
@@ -226,8 +226,8 @@ make migrate-create name=add_user_table
 # Rollback last migration
 make migrate-down
 
-# Check current migration version
-make migrate-version
+# Check migration status
+make migrate-status
 ```
 
 For detailed information on creating and managing migrations, see [Migration Documentation](docs/migration.md).

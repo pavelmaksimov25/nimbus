@@ -101,10 +101,10 @@ When introducing a new resource type (e.g., workflows):
 7. Create SQL migration files via `make migrate-create name=<name>`
 
 ### Database Migration
-1. `make migrate-create name=<descriptive_name>` — Creates up/down SQL files
-2. Edit `migrations/NNNNNN_<name>.up.sql` and `.down.sql`
+1. `make migrate-create name=<descriptive_name>` — Creates a single annotated SQL file
+2. Edit `migrations/NNNNN_<name>.sql` — Add `-- +goose Up` and `-- +goose Down` sections
 3. `make migrate` — Apply migration
-4. Down migration must fully reverse the up migration
+4. `-- +goose Down` section must fully reverse the `-- +goose Up` section
 
 ## Testing Patterns
 
@@ -142,7 +142,7 @@ Error types implement `Unwrap()` for `errors.Is()` matching. HTTP handlers use `
 | HTTP Framework | Gin |
 | ORM | GORM |
 | Database | PostgreSQL 16 |
-| Migrations | golang-migrate (SQL files) |
+| Migrations | goose (annotated SQL files) |
 | Mocking | go.uber.org/mock |
 | Assertions | testify |
 | Config | godotenv (.env files) |
