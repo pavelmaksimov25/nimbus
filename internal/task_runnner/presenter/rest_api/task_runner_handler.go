@@ -3,6 +3,7 @@ package restapi
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"nimbus/internal/task_runnner/domain/entity"
 	"nimbus/internal/task_runnner/domain/service"
@@ -11,6 +12,53 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
+
+var sensitiveConfigKeys = map[string]bool{
+	"access_key": true,
+	"secret_key": true,
+}
+
+type createRunnerRequest struct {
+	Name   string                  `json:"name" binding:"required"`
+	Type   entity.TaskRunnerType   `json:"type" binding:"required"`
+	Config entity.TaskRunnerConfig `json:"config"`
+}
+
+type taskRunnerResponse struct {
+	ID        uuid.UUID               `json:"id"`
+	Name      string                  `json:"name"`
+	Type      entity.TaskRunnerType   `json:"type"`
+	Config    entity.TaskRunnerConfig `json:"config"`
+	CreatedAt time.Time               `json:"created_at"`
+}
+
+func newTaskRunnerResponse(r *entity.TaskRunner) taskRunnerResponse {
+	config := make(entity.TaskRunnerConfig, len(r.Config))
+	for k, v := range r.Config {
+		if sensitiveConfigKeys[k] {
+			config[k] = "[REDACTED]"
+			continue
+		}
+
+		config[k] = v
+	}
+
+	return taskRunnerResponse{
+		ID:        r.ID,
+		Name:      r.Name,
+		Type:      r.Type,
+		Config:    config,
+		CreatedAt: r.CreatedAt,
+	}
+}
+
+func newTaskRunnerListResponse(runners []entity.TaskRunner) []taskRunnerResponse {
+	resp := make([]taskRunnerResponse, len(runners))
+	for i := range runners {
+		resp[i] = newTaskRunnerResponse(&runners[i])
+	}
+	return resp
+}
 
 type taskRunnerHandler struct {
 	service service.TaskRunnerService
@@ -30,14 +78,20 @@ func (h *taskRunnerHandler) RegisterRoutes(rg *gin.RouterGroup) {
 }
 
 func (h *taskRunnerHandler) handleCreateRunner(ctx *gin.Context) {
-	var runner entity.TaskRunner
-	if err := ctx.ShouldBindJSON(&runner); err != nil {
+	var req createRunnerRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		log.Printf("Invalid request body: %s", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
 
-	created, err := h.service.CreateRunner(&runner)
+	runner := &entity.TaskRunner{
+		Name:   req.Name,
+		Type:   req.Type,
+		Config: req.Config,
+	}
+
+	created, err := h.service.CreateRunner(runner)
 	if err != nil {
 		switch err.(type) {
 		case *types.UnprocessableEntityError:
@@ -49,7 +103,7 @@ func (h *taskRunnerHandler) handleCreateRunner(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, gin.H{"data": created})
+	ctx.JSON(http.StatusCreated, gin.H{"data": newTaskRunnerResponse(created)})
 }
 
 func (h *taskRunnerHandler) handleGetRunners(ctx *gin.Context) {
@@ -60,7 +114,7 @@ func (h *taskRunnerHandler) handleGetRunners(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"data": runners})
+	ctx.JSON(http.StatusOK, gin.H{"data": newTaskRunnerListResponse(runners)})
 }
 
 func (h *taskRunnerHandler) handleGetRunner(ctx *gin.Context) {
@@ -81,7 +135,7 @@ func (h *taskRunnerHandler) handleGetRunner(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"data": runner})
+	ctx.JSON(http.StatusOK, gin.H{"data": newTaskRunnerResponse(runner)})
 }
 
 func (h *taskRunnerHandler) handleAssignTask(ctx *gin.Context) {
@@ -149,5 +203,5 @@ func (h *taskRunnerHandler) handleGetRunnersByTask(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"data": runners})
+	ctx.JSON(http.StatusOK, gin.H{"data": newTaskRunnerListResponse(runners)})
 }

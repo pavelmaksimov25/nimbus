@@ -40,8 +40,12 @@ func (v *fieldRuleValidator) Validate(config entity.TaskRunnerConfig) error {
 		if strings.TrimSpace(val) == "" {
 			continue
 		}
-		if _, err := url.ParseRequestURI(val); err != nil {
+		parsed, err := url.ParseRequestURI(val)
+		if err != nil {
 			return fmt.Errorf("invalid %s: %s", r.Name, err)
+		}
+		if parsed.Scheme != "http" && parsed.Scheme != "https" {
+			return fmt.Errorf("invalid %s: scheme must be http or https", r.Name)
 		}
 	}
 

@@ -20,12 +20,20 @@ func TestTaskRunnerService_CreateRunner(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockTaskRunnerRepository(ctrl)
-	svc := NewTaskRunnerService(mockRepo, nil)
+	validators := map[entity.TaskRunnerType]runner.ConfigValidator{
+		entity.AwsSqs: sqs.NewConfigValidator(),
+	}
+	svc := NewTaskRunnerService(mockRepo, validators)
 
 	input := &entity.TaskRunner{
-		Name:   "my-sqs-runner",
-		Type:   entity.AwsSqs,
-		Config: entity.TaskRunnerConfig{"queue_url": "http://localhost:9324/000000000000/nimbus-tasks"},
+		Name: "my-sqs-runner",
+		Type: entity.AwsSqs,
+		Config: entity.TaskRunnerConfig{
+			"queue_url":  "http://localhost:9324/000000000000/nimbus-tasks",
+			"region":     "us-east-1",
+			"access_key": "test",
+			"secret_key": "test",
+		},
 	}
 
 	mockRepo.EXPECT().
@@ -41,6 +49,30 @@ func TestTaskRunnerService_CreateRunner(t *testing.T) {
 	assert.Equal(t, "my-sqs-runner", result.Name)
 	assert.Equal(t, entity.AwsSqs, result.Type)
 	assert.False(t, result.CreatedAt.IsZero())
+}
+
+func TestTaskRunnerService_CreateRunner_UnknownType(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := mocks.NewMockTaskRunnerRepository(ctrl)
+	validators := map[entity.TaskRunnerType]runner.ConfigValidator{
+		entity.AwsSqs: sqs.NewConfigValidator(),
+	}
+	svc := NewTaskRunnerService(mockRepo, validators)
+
+	input := &entity.TaskRunner{
+		Name:   "bad-runner",
+		Type:   "unknown_type",
+		Config: entity.TaskRunnerConfig{},
+	}
+
+	result, err := svc.CreateRunner(input)
+
+	assert.Nil(t, result)
+	assert.IsType(t, &types.UnprocessableEntityError{}, err)
+	assert.Contains(t, err.Error(), "unknown runner type")
+	assert.Contains(t, err.Error(), "unknown_type")
 }
 
 func TestTaskRunnerService_GetRunners(t *testing.T) {

@@ -33,7 +33,7 @@ func (t *taskHandler) RegisterRoutes(rg *gin.RouterGroup) {
 }
 
 type createTaskRequest struct {
-	Payload    string    `json:"payload" binding:"required"`
+	Payload    string    `json:"payload" binding:"required,max=262144"`
 	WorkflowID uuid.UUID `json:"workflow_id" binding:"required"`
 	RunnerID   uuid.UUID `json:"runner_id" binding:"required"`
 }

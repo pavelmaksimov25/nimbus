@@ -1,6 +1,8 @@
 package restapi
 
 import (
+	"net/http"
+
 	trService "nimbus/internal/task_runnner/domain/service"
 	trRestApi "nimbus/internal/task_runnner/presenter/rest_api"
 	"nimbus/internal/workflow/domain/service"
@@ -22,7 +24,15 @@ func NewRestApiServer() *ApiServer {
 	}
 }
 
+func maxBodySize() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 1<<20) // 1 MB
+		c.Next()
+	}
+}
+
 func (t *ApiServer) RegisterRoutes(taskService service.TaskService, workflowService service.WorkflowService, taskRunnerService trService.TaskRunnerService) {
+	t.router.Use(maxBodySize())
 	rg := t.router.Group(routePrefix)
 
 	taskHandler := NewTaskHandler(taskService)

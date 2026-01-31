@@ -10,8 +10,14 @@ import (
 
 type echoRunner struct{}
 
+const maxLogPayloadLen = 256
+
 func (r *echoRunner) Execute(_ context.Context, payload string) error {
-	log.Printf("[echo runner] payload: %s", payload)
+	logPayload := payload
+	if len(logPayload) > maxLogPayloadLen {
+		logPayload = logPayload[:maxLogPayloadLen] + "...(truncated)"
+	}
+	log.Printf("[echo runner] payload: %s", logPayload)
 	return nil
 }
 

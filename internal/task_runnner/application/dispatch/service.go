@@ -2,6 +2,7 @@ package dispatch
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"nimbus/internal/task_runnner/domain/entity"
@@ -37,7 +38,7 @@ func (s *dispatchService) DispatchTask(ctx context.Context, taskID uuid.UUID, pa
 		return nil
 	}
 
-	var dispatchErr error
+	var errs []error
 	for _, r := range runners {
 		factory, ok := s.factories[r.Type]
 		if !ok {
@@ -48,9 +49,9 @@ func (s *dispatchService) DispatchTask(ctx context.Context, taskID uuid.UUID, pa
 		execRunner := factory(r.Config)
 		if err := execRunner.Execute(ctx, payload); err != nil {
 			log.Printf("failed to dispatch task %s to runner %s: %v", taskID, r.ID, err)
-			dispatchErr = err
+			errs = append(errs, err)
 		}
 	}
 
-	return dispatchErr
+	return errors.Join(errs...)
 }

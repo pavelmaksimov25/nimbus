@@ -1,12 +1,16 @@
 package taskrunner
 
 import (
+	"fmt"
+	"sort"
+	"strings"
+	"time"
+
 	"nimbus/internal/task_runnner/domain/entity"
 	"nimbus/internal/task_runnner/domain/repository"
 	"nimbus/internal/task_runnner/domain/runner"
 	"nimbus/internal/task_runnner/domain/service"
 	"nimbus/internal/workflow/domain/types"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -21,10 +25,20 @@ func NewTaskRunnerService(repository repository.TaskRunnerRepository, validators
 }
 
 func (s *taskRunnerService) CreateRunner(r *entity.TaskRunner) (*entity.TaskRunner, error) {
-	if v, ok := s.validators[r.Type]; ok {
-		if err := v.Validate(r.Config); err != nil {
-			return nil, &types.UnprocessableEntityError{Msg: err.Error()}
+	v, ok := s.validators[r.Type]
+	if !ok {
+		validTypes := make([]string, 0, len(s.validators))
+		for t := range s.validators {
+			validTypes = append(validTypes, string(t))
 		}
+		sort.Strings(validTypes)
+		return nil, &types.UnprocessableEntityError{
+			Msg: fmt.Sprintf("unknown runner type %q, valid types: %s", r.Type, strings.Join(validTypes, ", ")),
+		}
+	}
+
+	if err := v.Validate(r.Config); err != nil {
+		return nil, &types.UnprocessableEntityError{Msg: err.Error()}
 	}
 
 	r.ID = uuid.New()

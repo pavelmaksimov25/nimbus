@@ -98,6 +98,20 @@ func (mr *MockTaskRepositoryMockRecorder) UpdateTask(task any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTask", reflect.TypeOf((*MockTaskRepository)(nil).UpdateTask), task)
 }
 
+// UpdateTaskStatus mocks base method.
+func (m *MockTaskRepository) UpdateTaskStatus(id uuid.UUID, fromStatus, toStatus entity.TaskStatus) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateTaskStatus", id, fromStatus, toStatus)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateTaskStatus indicates an expected call of UpdateTaskStatus.
+func (mr *MockTaskRepositoryMockRecorder) UpdateTaskStatus(id, fromStatus, toStatus any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTaskStatus", reflect.TypeOf((*MockTaskRepository)(nil).UpdateTaskStatus), id, fromStatus, toStatus)
+}
+
 // MockWorkflowRepository is a mock of WorkflowRepository interface.
 type MockWorkflowRepository struct {
 	ctrl     *gomock.Controller

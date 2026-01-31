@@ -85,3 +85,20 @@ func TestConfigValidator_NilConfig(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "missing required config fields")
 }
+
+func TestConfigValidator_FileSchemeRejected(t *testing.T) {
+	v := NewConfigValidator([]runner.FieldRule{
+		{Name: "endpoint", Required: true, URL: true},
+	})
+	err := v.Validate(entity.TaskRunnerConfig{"endpoint": "file:///etc/passwd"})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "scheme must be http or https")
+}
+
+func TestConfigValidator_HTTPSSchemeAccepted(t *testing.T) {
+	v := NewConfigValidator([]runner.FieldRule{
+		{Name: "endpoint", Required: true, URL: true},
+	})
+	err := v.Validate(entity.TaskRunnerConfig{"endpoint": "https://sqs.us-east-1.amazonaws.com"})
+	assert.NoError(t, err)
+}

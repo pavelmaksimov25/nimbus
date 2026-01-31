@@ -1,6 +1,7 @@
 package task
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -182,7 +183,7 @@ func TestTaskService_StartTask(t *testing.T) {
 		Return(existingTask)
 
 	mockRepo.EXPECT().
-		UpdateTask(gomock.Any()).
+		UpdateTaskStatus(existingTask.ID, entity.StatusNew, entity.StatusInProgress).
 		Return(nil)
 
 	// Act
@@ -229,6 +230,10 @@ func TestTaskService_StartTask_InvalidTaskStatus(t *testing.T) {
 				GetTask(existingTask.ID).
 				Return(&taskCopy)
 
+			mockRepo.EXPECT().
+				UpdateTaskStatus(existingTask.ID, entity.StatusNew, entity.StatusInProgress).
+				Return(errors.New("task is not in status NEW"))
+
 			// Act
 			err := taskService.StartTask(existingTask.ID)
 
@@ -266,29 +271,43 @@ func TestTaskService_CompleteTask(t *testing.T) {
 	mockRepo := mocks.NewMockTaskRepository(ctrl)
 	taskService := NewTaskService(mockRepo, nil, nil)
 
+	taskID := uuid.New()
 	inProgressTask := &entity.Task{
-		ID:         uuid.New(),
+		ID:         taskID,
 		Payload:    "Test Payload",
 		Status:     entity.StatusInProgress,
 		WorkflowID: uuid.New(),
 	}
 
-	// First call for CompleteTask
+	// First GetTask call for existence check
 	mockRepo.EXPECT().
-		GetTask(inProgressTask.ID).
-		Return(inProgressTask).
-		Times(1)
+		GetTask(taskID).
+		Return(inProgressTask)
+
+	mockRepo.EXPECT().
+		UpdateTaskStatus(taskID, entity.StatusInProgress, entity.StatusCompleted).
+		Return(nil)
+
+	// Second GetTask call for payload update
+	completedTask := &entity.Task{
+		ID:         taskID,
+		Payload:    "Test Payload",
+		Status:     entity.StatusCompleted,
+		WorkflowID: inProgressTask.WorkflowID,
+	}
+	mockRepo.EXPECT().
+		GetTask(taskID).
+		Return(completedTask)
 
 	mockRepo.EXPECT().
 		UpdateTask(gomock.Any()).
 		DoAndReturn(func(task *entity.Task) error {
-			assert.Equal(t, entity.StatusCompleted, task.Status)
 			assert.Equal(t, "Test Payload - Additional Payload", task.Payload)
 			return nil
 		})
 
 	// Act
-	err := taskService.CompleteTask(inProgressTask.ID, " - Additional Payload")
+	err := taskService.CompleteTask(taskID, " - Additional Payload")
 
 	// Assert
 	assert.Nil(t, err)
@@ -331,6 +350,10 @@ func TestTaskService_CompleteTask_InvalidTaskStatus(t *testing.T) {
 				GetTask(existingTask.ID).
 				Return(&taskCopy)
 
+			mockRepo.EXPECT().
+				UpdateTaskStatus(existingTask.ID, entity.StatusInProgress, entity.StatusCompleted).
+				Return(errors.New("task is not in status IN_PROGRESS"))
+
 			// Act
 			err := taskService.CompleteTask(existingTask.ID, "")
 
@@ -368,26 +391,39 @@ func TestTaskService_FailTask(t *testing.T) {
 	mockRepo := mocks.NewMockTaskRepository(ctrl)
 	taskService := NewTaskService(mockRepo, nil, nil)
 
+	taskID := uuid.New()
 	inProgressTask := &entity.Task{
-		ID:      uuid.New(),
+		ID:      taskID,
 		Payload: "Test Payload",
 		Status:  entity.StatusInProgress,
 	}
 
 	mockRepo.EXPECT().
-		GetTask(inProgressTask.ID).
+		GetTask(taskID).
 		Return(inProgressTask)
+
+	mockRepo.EXPECT().
+		UpdateTaskStatus(taskID, entity.StatusInProgress, entity.StatusFailed).
+		Return(nil)
+
+	failedTask := &entity.Task{
+		ID:      taskID,
+		Payload: "Test Payload",
+		Status:  entity.StatusFailed,
+	}
+	mockRepo.EXPECT().
+		GetTask(taskID).
+		Return(failedTask)
 
 	mockRepo.EXPECT().
 		UpdateTask(gomock.Any()).
 		DoAndReturn(func(task *entity.Task) error {
-			assert.Equal(t, entity.StatusFailed, task.Status)
 			assert.Equal(t, "Some failure reason", task.FailReason)
 			return nil
 		})
 
 	// Act
-	err := taskService.FailTask(inProgressTask.ID, "Some failure reason")
+	err := taskService.FailTask(taskID, "Some failure reason")
 
 	// Assert
 	assert.Nil(t, err)
@@ -447,6 +483,10 @@ func TestTaskService_FailTask_InvalidTaskStatus(t *testing.T) {
 				GetTask(existingTask.ID).
 				Return(&taskCopy)
 
+			mockRepo.EXPECT().
+				UpdateTaskStatus(existingTask.ID, entity.StatusInProgress, entity.StatusFailed).
+				Return(errors.New("task is not in status IN_PROGRESS"))
+
 			// Act
 			err := taskService.FailTask(existingTask.ID, "Some failure reason")
 
@@ -477,7 +517,7 @@ func TestTaskService_StartTask_DispatcheToRunners(t *testing.T) {
 		Return(existingTask)
 
 	mockRepo.EXPECT().
-		UpdateTask(gomock.Any()).
+		UpdateTaskStatus(existingTask.ID, entity.StatusNew, entity.StatusInProgress).
 		Return(nil)
 
 	mockDispatch.EXPECT().

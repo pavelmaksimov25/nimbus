@@ -139,3 +139,35 @@ func TestDispatchService_DispatchTask_RepoError(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to get runners")
 }
+
+func TestDispatchService_DispatchTask_MultipleErrors(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := mocks.NewMockTaskRunnerRepository(ctrl)
+
+	callCount := 0
+	factories := map[entity.TaskRunnerType]runner.Factory{
+		entity.AwsSqs: func(config entity.TaskRunnerConfig) runner.Runner {
+			callCount++
+			return &mockRunner{err: errors.New("fail-" + config["queue_url"].(string))}
+		},
+	}
+
+	svc := NewDispatchService(mockRepo, factories)
+
+	taskID := uuid.New()
+	runners := []entity.TaskRunner{
+		{ID: uuid.New(), Name: "runner-1", Type: entity.AwsSqs, Config: entity.TaskRunnerConfig{"queue_url": "url1"}},
+		{ID: uuid.New(), Name: "runner-2", Type: entity.AwsSqs, Config: entity.TaskRunnerConfig{"queue_url": "url2"}},
+	}
+
+	mockRepo.EXPECT().GetByTaskID(taskID).Return(runners, nil)
+
+	err := svc.DispatchTask(context.Background(), taskID, "test payload")
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "fail-url1")
+	assert.Contains(t, err.Error(), "fail-url2")
+	assert.Equal(t, 2, callCount)
+}

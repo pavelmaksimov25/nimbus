@@ -13,6 +13,8 @@ import (
 	"github.com/google/uuid"
 )
 
+const dispatchTimeout = 30 * time.Second
+
 type taskService struct {
 	repository        repository.TaskRepository
 	dispatchService   trService.DispatchService
@@ -68,7 +70,7 @@ func (ts *taskService) StartTask(id uuid.UUID) error {
 		return err
 	}
 
-	if task.Status != entity.StatusNew {
+	if err := ts.repository.UpdateTaskStatus(id, entity.StatusNew, entity.StatusInProgress); err != nil {
 		return &types.UnprocessableEntityError{
 			Resource: "Task",
 			ID:       id.String(),
@@ -76,15 +78,11 @@ func (ts *taskService) StartTask(id uuid.UUID) error {
 		}
 	}
 
-	task.Status = entity.StatusInProgress
-
-	if err := ts.repository.UpdateTask(task); err != nil {
-		return err
-	}
-
 	if ts.dispatchService != nil {
 		go func() {
-			if err := ts.dispatchService.DispatchTask(context.Background(), task.ID, task.Payload); err != nil {
+			ctx, cancel := context.WithTimeout(context.Background(), dispatchTimeout)
+			defer cancel()
+			if err := ts.dispatchService.DispatchTask(ctx, task.ID, task.Payload); err != nil {
 				log.Printf("failed to dispatch task %s: %v", task.ID, err)
 			}
 		}()
@@ -94,12 +92,12 @@ func (ts *taskService) StartTask(id uuid.UUID) error {
 }
 
 func (ts *taskService) CompleteTask(id uuid.UUID, additionalPayload string) error {
-	task, err := ts.GetTask(id)
+	_, err := ts.GetTask(id)
 	if err != nil {
 		return err
 	}
 
-	if task.Status != entity.StatusInProgress {
+	if err := ts.repository.UpdateTaskStatus(id, entity.StatusInProgress, entity.StatusCompleted); err != nil {
 		return &types.UnprocessableEntityError{
 			Resource: "Task",
 			ID:       id.String(),
@@ -107,21 +105,24 @@ func (ts *taskService) CompleteTask(id uuid.UUID, additionalPayload string) erro
 		}
 	}
 
-	task.Status = entity.StatusCompleted
-	task.Payload += additionalPayload
+	if additionalPayload != "" {
+		task := ts.repository.GetTask(id)
+		if task != nil {
+			task.Payload += additionalPayload
+			return ts.repository.UpdateTask(task)
+		}
+	}
 
-	return ts.repository.UpdateTask(task)
+	return nil
 }
 
 func (ts *taskService) FailTask(id uuid.UUID, reason string) error {
-	task, err := ts.GetTask(id)
+	_, err := ts.GetTask(id)
 	if err != nil {
 		return err
 	}
 
-	// it is unable to fail what wasn't started
-	// it is also unable to fail what is already failed or completed
-	if task.Status != entity.StatusInProgress {
+	if err := ts.repository.UpdateTaskStatus(id, entity.StatusInProgress, entity.StatusFailed); err != nil {
 		return &types.UnprocessableEntityError{
 			Resource: "Task",
 			ID:       id.String(),
@@ -129,8 +130,11 @@ func (ts *taskService) FailTask(id uuid.UUID, reason string) error {
 		}
 	}
 
-	task.Status = entity.StatusFailed
-	task.FailReason = reason
+	task := ts.repository.GetTask(id)
+	if task != nil {
+		task.FailReason = reason
+		return ts.repository.UpdateTask(task)
+	}
 
-	return ts.repository.UpdateTask(task)
+	return nil
 }
