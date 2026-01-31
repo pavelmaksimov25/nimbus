@@ -10,3 +10,7 @@ type Runner interface {
 }
 
 type Factory func(config entity.TaskRunnerConfig) Runner
+
+type ConfigValidator interface {
+	Validate(config entity.TaskRunnerConfig) error
+}

@@ -3,6 +3,7 @@ package taskrunner
 import (
 	"nimbus/internal/task_runnner/domain/entity"
 	"nimbus/internal/task_runnner/domain/repository"
+	"nimbus/internal/task_runnner/domain/runner"
 	"nimbus/internal/task_runnner/domain/service"
 	"nimbus/internal/workflow/domain/types"
 	"time"
@@ -12,16 +13,23 @@ import (
 
 type taskRunnerService struct {
 	repository repository.TaskRunnerRepository
+	validators map[entity.TaskRunnerType]runner.ConfigValidator
 }
 
-func NewTaskRunnerService(repository repository.TaskRunnerRepository) service.TaskRunnerService {
-	return &taskRunnerService{repository: repository}
+func NewTaskRunnerService(repository repository.TaskRunnerRepository, validators map[entity.TaskRunnerType]runner.ConfigValidator) service.TaskRunnerService {
+	return &taskRunnerService{repository: repository, validators: validators}
 }
 
-func (s *taskRunnerService) CreateRunner(runner *entity.TaskRunner) (*entity.TaskRunner, error) {
-	runner.ID = uuid.New()
-	runner.CreatedAt = time.Now()
-	return s.repository.Store(runner)
+func (s *taskRunnerService) CreateRunner(r *entity.TaskRunner) (*entity.TaskRunner, error) {
+	if v, ok := s.validators[r.Type]; ok {
+		if err := v.Validate(r.Config); err != nil {
+			return nil, &types.UnprocessableEntityError{Msg: err.Error()}
+		}
+	}
+
+	r.ID = uuid.New()
+	r.CreatedAt = time.Now()
+	return s.repository.Store(r)
 }
 
 func (s *taskRunnerService) GetRunners() ([]entity.TaskRunner, error) {

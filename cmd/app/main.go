@@ -36,22 +36,19 @@ func main() {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	// SQS client
-	sqsClient := sqsAdapter.NewSQSClient(
-		os.Getenv("SQS_ENDPOINT"),
-		os.Getenv("SQS_REGION"),
-		os.Getenv("SQS_ACCESS_KEY"),
-		os.Getenv("SQS_SECRET_KEY"),
-	)
-
 	// Runner factories
 	factories := map[trEntity.TaskRunnerType]runner.Factory{
-		trEntity.Queue: sqsAdapter.NewFactory(sqsClient),
+		trEntity.Queue: sqsAdapter.NewFactory(),
+	}
+
+	// Config validators
+	validators := map[trEntity.TaskRunnerType]runner.ConfigValidator{
+		trEntity.Queue: sqsAdapter.NewConfigValidator(),
 	}
 
 	// Task runner module
 	taskRunnerRepository := trRepo.NewTaskRunnerRepository(dbConn)
-	taskRunnerService := trSvc.NewTaskRunnerService(taskRunnerRepository)
+	taskRunnerService := trSvc.NewTaskRunnerService(taskRunnerRepository, validators)
 	dispatchService := dispatchSvc.NewDispatchService(taskRunnerRepository, factories)
 
 	// Workflow module

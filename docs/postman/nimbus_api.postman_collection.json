@@ -198,7 +198,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"SQS Runner\",\n    \"type\": \"queue\",\n    \"config\": {\n        \"queue_url\": \"http://localhost:9324/000000000000/nimbus-tasks\"\n    }\n}"
+							"raw": "{\n    \"name\": \"SQS Runner\",\n    \"type\": \"queue\",\n    \"config\": {\n        \"queue_url\": \"http://localhost:9324/000000000000/nimbus-tasks\",\n        \"region\": \"us-east-1\",\n        \"access_key\": \"test\",\n        \"secret_key\": \"test\",\n        \"endpoint\": \"http://localhost:9324\"\n    }\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/task-runners",
@@ -317,7 +317,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"SQS Runner\",\n    \"type\": \"queue\",\n    \"config\": {\n        \"queue_url\": \"http://localhost:9324/000000000000/nimbus-tasks\"\n    }\n}"
+							"raw": "{\n    \"name\": \"SQS Runner\",\n    \"type\": \"queue\",\n    \"config\": {\n        \"queue_url\": \"http://localhost:9324/000000000000/nimbus-tasks\",\n        \"region\": \"us-east-1\",\n        \"access_key\": \"test\",\n        \"secret_key\": \"test\",\n        \"endpoint\": \"http://localhost:9324\"\n    }\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/task-runners",

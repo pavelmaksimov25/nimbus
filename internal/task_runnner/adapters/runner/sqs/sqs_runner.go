@@ -29,9 +29,15 @@ func (r *sqsRunner) Execute(ctx context.Context, payload string) error {
 	return err
 }
 
-func NewFactory(client *sqs.Client) runner.Factory {
+func NewFactory() runner.Factory {
 	return func(config entity.TaskRunnerConfig) runner.Runner {
 		queueURL, _ := config["queue_url"].(string)
+		region, _ := config["region"].(string)
+		accessKey, _ := config["access_key"].(string)
+		secretKey, _ := config["secret_key"].(string)
+		endpoint, _ := config["endpoint"].(string)
+
+		client := NewSQSClient(endpoint, region, accessKey, secretKey)
 		return NewSQSRunner(client, queueURL)
 	}
 }

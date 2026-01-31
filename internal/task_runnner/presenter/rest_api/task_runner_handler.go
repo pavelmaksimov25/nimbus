@@ -39,8 +39,13 @@ func (h *taskRunnerHandler) handleCreateRunner(ctx *gin.Context) {
 
 	created, err := h.service.CreateRunner(&runner)
 	if err != nil {
-		log.Printf("Error creating task runner: %s", err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Internal Server Error"})
+		switch err.(type) {
+		case *types.UnprocessableEntityError:
+			ctx.JSON(http.StatusUnprocessableEntity, gin.H{"message": err.Error()})
+		default:
+			log.Printf("Error creating task runner: %s", err)
+			ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Internal Server Error"})
+		}
 		return
 	}
 

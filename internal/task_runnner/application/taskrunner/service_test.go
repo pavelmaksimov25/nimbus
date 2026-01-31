@@ -3,8 +3,10 @@ package taskrunner
 import (
 	"testing"
 
+	"nimbus/internal/task_runnner/adapters/runner/sqs"
 	"nimbus/internal/task_runnner/domain/entity"
 	"nimbus/internal/task_runnner/domain/repository/mocks"
+	"nimbus/internal/task_runnner/domain/runner"
 	"nimbus/internal/workflow/domain/types"
 
 	"github.com/google/uuid"
@@ -18,7 +20,7 @@ func TestTaskRunnerService_CreateRunner(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockTaskRunnerRepository(ctrl)
-	svc := NewTaskRunnerService(mockRepo)
+	svc := NewTaskRunnerService(mockRepo, nil)
 
 	input := &entity.TaskRunner{
 		Name:   "my-sqs-runner",
@@ -46,7 +48,7 @@ func TestTaskRunnerService_GetRunners(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockTaskRunnerRepository(ctrl)
-	svc := NewTaskRunnerService(mockRepo)
+	svc := NewTaskRunnerService(mockRepo, nil)
 
 	expected := []entity.TaskRunner{
 		{ID: uuid.New(), Name: "runner-1", Type: entity.Queue},
@@ -66,7 +68,7 @@ func TestTaskRunnerService_GetRunner(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockTaskRunnerRepository(ctrl)
-	svc := NewTaskRunnerService(mockRepo)
+	svc := NewTaskRunnerService(mockRepo, nil)
 
 	expected := &entity.TaskRunner{ID: uuid.New(), Name: "runner-1", Type: entity.Queue}
 
@@ -83,7 +85,7 @@ func TestTaskRunnerService_GetRunner_NotFound(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockTaskRunnerRepository(ctrl)
-	svc := NewTaskRunnerService(mockRepo)
+	svc := NewTaskRunnerService(mockRepo, nil)
 
 	id := uuid.New()
 	mockRepo.EXPECT().GetByID(id).Return(nil, gorm.ErrRecordNotFound)
@@ -99,7 +101,7 @@ func TestTaskRunnerService_AssignTask(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockTaskRunnerRepository(ctrl)
-	svc := NewTaskRunnerService(mockRepo)
+	svc := NewTaskRunnerService(mockRepo, nil)
 
 	runnerID := uuid.New()
 	taskID := uuid.New()
@@ -122,7 +124,7 @@ func TestTaskRunnerService_AssignTask_RunnerNotFound(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockTaskRunnerRepository(ctrl)
-	svc := NewTaskRunnerService(mockRepo)
+	svc := NewTaskRunnerService(mockRepo, nil)
 
 	runnerID := uuid.New()
 	taskID := uuid.New()
@@ -141,7 +143,7 @@ func TestTaskRunnerService_UnassignTask(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockTaskRunnerRepository(ctrl)
-	svc := NewTaskRunnerService(mockRepo)
+	svc := NewTaskRunnerService(mockRepo, nil)
 
 	runnerID := uuid.New()
 	taskID := uuid.New()
@@ -160,7 +162,7 @@ func TestTaskRunnerService_GetRunnersByTaskID(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockTaskRunnerRepository(ctrl)
-	svc := NewTaskRunnerService(mockRepo)
+	svc := NewTaskRunnerService(mockRepo, nil)
 
 	taskID := uuid.New()
 	expected := []entity.TaskRunner{
@@ -173,4 +175,64 @@ func TestTaskRunnerService_GetRunnersByTaskID(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Len(t, runners, 1)
+}
+
+func TestTaskRunnerService_CreateRunner_ValidationError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := mocks.NewMockTaskRunnerRepository(ctrl)
+	validators := map[entity.TaskRunnerType]runner.ConfigValidator{
+		entity.Queue: sqs.NewConfigValidator(),
+	}
+	svc := NewTaskRunnerService(mockRepo, validators)
+
+	input := &entity.TaskRunner{
+		Name:   "bad-runner",
+		Type:   entity.Queue,
+		Config: entity.TaskRunnerConfig{"queue_url": "http://localhost:9324/queue"},
+	}
+
+	result, err := svc.CreateRunner(input)
+
+	assert.Nil(t, result)
+	assert.IsType(t, &types.UnprocessableEntityError{}, err)
+	assert.Contains(t, err.Error(), "region")
+	assert.Contains(t, err.Error(), "access_key")
+	assert.Contains(t, err.Error(), "secret_key")
+}
+
+func TestTaskRunnerService_CreateRunner_ValidationSuccess(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := mocks.NewMockTaskRunnerRepository(ctrl)
+	validators := map[entity.TaskRunnerType]runner.ConfigValidator{
+		entity.Queue: sqs.NewConfigValidator(),
+	}
+	svc := NewTaskRunnerService(mockRepo, validators)
+
+	input := &entity.TaskRunner{
+		Name: "good-runner",
+		Type: entity.Queue,
+		Config: entity.TaskRunnerConfig{
+			"queue_url":  "http://localhost:9324/000000000000/nimbus-tasks",
+			"region":     "us-east-1",
+			"access_key": "test",
+			"secret_key": "test",
+			"endpoint":   "http://localhost:9324",
+		},
+	}
+
+	mockRepo.EXPECT().
+		Store(gomock.Any()).
+		DoAndReturn(func(r *entity.TaskRunner) (*entity.TaskRunner, error) {
+			return r, nil
+		})
+
+	result, err := svc.CreateRunner(input)
+
+	assert.NoError(t, err)
+	assert.NotEqual(t, uuid.Nil, result.ID)
+	assert.Equal(t, "good-runner", result.Name)
 }

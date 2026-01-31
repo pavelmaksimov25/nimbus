@@ -226,6 +226,8 @@ paths:
                 $ref: '#/components/schemas/TaskRunnerResponse'
         '400':
           $ref: '#/components/responses/400'
+        '422':
+          $ref: '#/components/responses/422'
         '500':
           $ref: '#/components/responses/500'
     get:
@@ -446,13 +448,20 @@ components:
           description: The runner backend type
         config:
           type: object
-          description: Backend-specific configuration (e.g. queue_url for SQS)
+          description: >
+            Backend-specific configuration. For type "queue" (SQS):
+            queue_url (required), region (required), access_key (required),
+            secret_key (required), endpoint (optional, for ElasticMQ/LocalStack).
           additionalProperties: true
       example:
         name: "SQS Runner"
         type: "queue"
         config:
           queue_url: "http://localhost:9324/000000000000/nimbus-tasks"
+          region: "us-east-1"
+          access_key: "test"
+          secret_key: "test"
+          endpoint: "http://localhost:9324"
     TaskRunner:
       type: object
       properties:
@@ -481,6 +490,10 @@ components:
         type: "queue"
         config:
           queue_url: "http://localhost:9324/000000000000/nimbus-tasks"
+          region: "us-east-1"
+          access_key: "test"
+          secret_key: "test"
+          endpoint: "http://localhost:9324"
         created_at: "2025-10-29T10:30:00Z"
     TaskRunnerResponse:
       type: object
