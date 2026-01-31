@@ -2,12 +2,20 @@ package main
 
 import (
 	"log"
-	"nimbus/internal/workflow/application/task"
 	"os"
 
+	trEntity "nimbus/internal/task_runnner/domain/entity"
+	"nimbus/internal/task_runnner/domain/runner"
+
+	trRepo "nimbus/internal/task_runnner/adapters/repository/taskrunner"
+	sqsAdapter "nimbus/internal/task_runnner/adapters/runner/sqs"
+	dispatchSvc "nimbus/internal/task_runnner/application/dispatch"
+	trSvc "nimbus/internal/task_runnner/application/taskrunner"
+
 	taskRepository "nimbus/internal/workflow/adapters/repository/task"
-	workflow_repository "nimbus/internal/workflow/adapters/repository/workflow"
-	workflow_service "nimbus/internal/workflow/application/workflow"
+	workflowRepository "nimbus/internal/workflow/adapters/repository/workflow"
+	"nimbus/internal/workflow/application/task"
+	workflowService "nimbus/internal/workflow/application/workflow"
 	restapi "nimbus/internal/workflow/presenter/rest_api"
 
 	"gorm.io/driver/postgres"
@@ -24,17 +32,38 @@ func main() {
 
 	dsn := os.Getenv("DB_DSN")
 	dbConn, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
 
-	taskRepository := taskRepository.NewTaskRepository(dbConn)
-	taskService := task.NewTaskService(taskRepository)
+	// SQS client
+	sqsClient := sqsAdapter.NewSQSClient(
+		os.Getenv("SQS_ENDPOINT"),
+		os.Getenv("SQS_REGION"),
+		os.Getenv("SQS_ACCESS_KEY"),
+		os.Getenv("SQS_SECRET_KEY"),
+	)
 
-	workflowRepository := workflow_repository.NewWorkflowRepository(dbConn)
-	workflowService := workflow_service.NewWorkflowService(workflowRepository)
+	// Runner factories
+	factories := map[trEntity.TaskRunnerType]runner.Factory{
+		trEntity.Queue: sqsAdapter.NewFactory(sqsClient),
+	}
+
+	// Task runner module
+	taskRunnerRepository := trRepo.NewTaskRunnerRepository(dbConn)
+	taskRunnerService := trSvc.NewTaskRunnerService(taskRunnerRepository)
+	dispatchService := dispatchSvc.NewDispatchService(taskRunnerRepository, factories)
+
+	// Workflow module
+	taskRepo := taskRepository.NewTaskRepository(dbConn)
+	taskService := task.NewTaskService(taskRepo, dispatchService)
+
+	workflowRepo := workflowRepository.NewWorkflowRepository(dbConn)
+	wfService := workflowService.NewWorkflowService(workflowRepo)
 
 	server := restapi.NewRestApiServer()
-	server.RegisterRoutes(taskService, workflowService)
-	server.Run()
-	if err != nil {
-		panic(err)
+	server.RegisterRoutes(taskService, wfService, taskRunnerService)
+	if err := server.Run(); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
 	}
 }

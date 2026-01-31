@@ -1,6 +1,9 @@
 package task
 
 import (
+	"context"
+	"log"
+	trService "nimbus/internal/task_runnner/domain/service"
 	entity "nimbus/internal/workflow/domain/entity"
 	"nimbus/internal/workflow/domain/repository"
 	"nimbus/internal/workflow/domain/service"
@@ -11,12 +14,14 @@ import (
 )
 
 type taskService struct {
-	repository repository.TaskRepository
+	repository      repository.TaskRepository
+	dispatchService trService.DispatchService
 }
 
-func NewTaskService(repository repository.TaskRepository) service.TaskService {
+func NewTaskService(repository repository.TaskRepository, dispatchService trService.DispatchService) service.TaskService {
 	return &taskService{
-		repository: repository,
+		repository:      repository,
+		dispatchService: dispatchService,
 	}
 }
 
@@ -56,7 +61,19 @@ func (ts *taskService) StartTask(id uuid.UUID) error {
 
 	task.Status = entity.StatusInProgress
 
-	return ts.repository.UpdateTask(task)
+	if err := ts.repository.UpdateTask(task); err != nil {
+		return err
+	}
+
+	if ts.dispatchService != nil {
+		go func() {
+			if err := ts.dispatchService.DispatchTask(context.Background(), task.ID, task.Payload); err != nil {
+				log.Printf("failed to dispatch task %s: %v", task.ID, err)
+			}
+		}()
+	}
+
+	return nil
 }
 
 func (ts *taskService) CompleteTask(id uuid.UUID, additionalPayload string) error {

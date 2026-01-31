@@ -1,6 +1,8 @@
 package restapi
 
 import (
+	trService "nimbus/internal/task_runnner/domain/service"
+	trRestApi "nimbus/internal/task_runnner/presenter/rest_api"
 	"nimbus/internal/workflow/domain/service"
 
 	"github.com/gin-gonic/gin"
@@ -20,7 +22,7 @@ func NewRestApiServer() *ApiServer {
 	}
 }
 
-func (t *ApiServer) RegisterRoutes(taskService service.TaskService, workflowService service.WorkflowService) {
+func (t *ApiServer) RegisterRoutes(taskService service.TaskService, workflowService service.WorkflowService, taskRunnerService trService.TaskRunnerService) {
 	rg := t.router.Group(routePrefix)
 
 	taskHandler := NewTaskHandler(taskService)
@@ -28,6 +30,9 @@ func (t *ApiServer) RegisterRoutes(taskService service.TaskService, workflowServ
 
 	workflowHandler := NewWorkflowHandler(workflowService)
 	workflowHandler.RegisterRoutes(rg)
+
+	taskRunnerHandler := trRestApi.NewTaskRunnerHandler(taskRunnerService)
+	taskRunnerHandler.RegisterRoutes(rg)
 }
 
 func (t *ApiServer) Run() error {

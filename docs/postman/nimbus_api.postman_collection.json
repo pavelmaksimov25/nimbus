@@ -1,0 +1,400 @@
+{
+	"info": {
+		"name": "Nimbus Workflow API",
+		"description": "API collection for Nimbus distributed workflow engine",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080/api/v1"
+		},
+		{
+			"key": "workflow_id",
+			"value": ""
+		},
+		{
+			"key": "task_id",
+			"value": ""
+		},
+		{
+			"key": "runner_id",
+			"value": ""
+		}
+	],
+	"item": [
+		{
+			"name": "Workflows",
+			"item": [
+				{
+					"name": "Create Workflow",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var json = pm.response.json();",
+									"    pm.collectionVariables.set('workflow_id', json.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"My Workflow\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/workflows",
+							"host": ["{{base_url}}"],
+							"path": ["workflows"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Tasks",
+			"item": [
+				{
+					"name": "Create Task",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var json = pm.response.json();",
+									"    pm.collectionVariables.set('task_id', json.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"payload\": \"{\\\"action\\\": \\\"process_data\\\", \\\"data\\\": {\\\"key\\\": \\\"value\\\"}}\",\n    \"workflow_id\": \"{{workflow_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/tasks",
+							"host": ["{{base_url}}"],
+							"path": ["tasks"]
+						}
+					}
+				},
+				{
+					"name": "Get All Tasks",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/tasks",
+							"host": ["{{base_url}}"],
+							"path": ["tasks"]
+						}
+					}
+				},
+				{
+					"name": "Get Task by ID",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/tasks/{{task_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["tasks", "{{task_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Start Task",
+					"request": {
+						"method": "POST",
+						"url": {
+							"raw": "{{base_url}}/tasks/{{task_id}}/start",
+							"host": ["{{base_url}}"],
+							"path": ["tasks", "{{task_id}}", "start"]
+						}
+					}
+				},
+				{
+					"name": "Complete Task",
+					"request": {
+						"method": "POST",
+						"url": {
+							"raw": "{{base_url}}/tasks/{{task_id}}/complete",
+							"host": ["{{base_url}}"],
+							"path": ["tasks", "{{task_id}}", "complete"]
+						}
+					}
+				},
+				{
+					"name": "Fail Task",
+					"request": {
+						"method": "POST",
+						"url": {
+							"raw": "{{base_url}}/tasks/{{task_id}}/fail",
+							"host": ["{{base_url}}"],
+							"path": ["tasks", "{{task_id}}", "fail"]
+						}
+					}
+				},
+				{
+					"name": "Get Runners for Task",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/tasks/{{task_id}}/runners",
+							"host": ["{{base_url}}"],
+							"path": ["tasks", "{{task_id}}", "runners"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Task Runners",
+			"item": [
+				{
+					"name": "Create Task Runner",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var json = pm.response.json();",
+									"    pm.collectionVariables.set('runner_id', json.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"SQS Runner\",\n    \"type\": \"queue\",\n    \"config\": {\n        \"queue_url\": \"http://localhost:9324/000000000000/nimbus-tasks\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/task-runners",
+							"host": ["{{base_url}}"],
+							"path": ["task-runners"]
+						}
+					}
+				},
+				{
+					"name": "Get All Task Runners",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/task-runners",
+							"host": ["{{base_url}}"],
+							"path": ["task-runners"]
+						}
+					}
+				},
+				{
+					"name": "Get Task Runner by ID",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/task-runners/{{runner_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["task-runners", "{{runner_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Assign Runner to Task",
+					"request": {
+						"method": "POST",
+						"url": {
+							"raw": "{{base_url}}/task-runners/{{runner_id}}/assign/{{task_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["task-runners", "{{runner_id}}", "assign", "{{task_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Unassign Runner from Task",
+					"request": {
+						"method": "DELETE",
+						"url": {
+							"raw": "{{base_url}}/task-runners/{{runner_id}}/assign/{{task_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["task-runners", "{{runner_id}}", "assign", "{{task_id}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "E2E: Create Runner -> Task -> Assign -> Start",
+			"item": [
+				{
+					"name": "1. Create Workflow",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var json = pm.response.json();",
+									"    pm.collectionVariables.set('workflow_id', json.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"E2E Test Workflow\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/workflows",
+							"host": ["{{base_url}}"],
+							"path": ["workflows"]
+						}
+					}
+				},
+				{
+					"name": "2. Create Task Runner",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var json = pm.response.json();",
+									"    pm.collectionVariables.set('runner_id', json.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"SQS Runner\",\n    \"type\": \"queue\",\n    \"config\": {\n        \"queue_url\": \"http://localhost:9324/000000000000/nimbus-tasks\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/task-runners",
+							"host": ["{{base_url}}"],
+							"path": ["task-runners"]
+						}
+					}
+				},
+				{
+					"name": "3. Create Task",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var json = pm.response.json();",
+									"    pm.collectionVariables.set('task_id', json.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"payload\": \"{\\\"action\\\": \\\"process_data\\\", \\\"key\\\": \\\"value\\\"}\",\n    \"workflow_id\": \"{{workflow_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/tasks",
+							"host": ["{{base_url}}"],
+							"path": ["tasks"]
+						}
+					}
+				},
+				{
+					"name": "4. Assign Runner to Task",
+					"request": {
+						"method": "POST",
+						"url": {
+							"raw": "{{base_url}}/task-runners/{{runner_id}}/assign/{{task_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["task-runners", "{{runner_id}}", "assign", "{{task_id}}"]
+						}
+					}
+				},
+				{
+					"name": "5. Start Task (dispatches to SQS)",
+					"request": {
+						"method": "POST",
+						"url": {
+							"raw": "{{base_url}}/tasks/{{task_id}}/start",
+							"host": ["{{base_url}}"],
+							"path": ["tasks", "{{task_id}}", "start"]
+						}
+					}
+				},
+				{
+					"name": "6. Verify Runners for Task",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/tasks/{{task_id}}/runners",
+							"host": ["{{base_url}}"],
+							"path": ["tasks", "{{task_id}}", "runners"]
+						}
+					}
+				}
+			]
+		}
+	]
+}

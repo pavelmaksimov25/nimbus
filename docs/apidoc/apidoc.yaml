@@ -1,8 +1,8 @@
 openapi: '3.0.0'
 info:
   title: Nimbus Workflow API
-  version: '0.1.0'
-  description: API for managing workflows and their associated tasks
+  version: '0.2.0'
+  description: API for managing workflows, tasks, and task runners
 servers:
   - url: http://localhost:8080/api/v1
 paths:
@@ -10,6 +10,8 @@ paths:
     post:
       summary: Create a new workflow
       description: Creates a new workflow with the provided name
+      tags:
+        - Workflows
       requestBody:
         required: true
         content:
@@ -31,6 +33,8 @@ paths:
     post:
       summary: Create a new task
       description: Creates a new task with the provided payload
+      tags:
+        - Tasks
       requestBody:
         required: true
         content:
@@ -51,6 +55,8 @@ paths:
     get:
       summary: Get all tasks
       description: Retrieves a list of all tasks
+      tags:
+        - Tasks
       responses:
         '200':
           description: List of tasks retrieved successfully
@@ -64,6 +70,8 @@ paths:
     get:
       summary: Get a specific task
       description: Retrieves a task by its ID
+      tags:
+        - Tasks
       parameters:
         - name: id
           in: path
@@ -88,7 +96,9 @@ paths:
   /tasks/{id}/start:
     post:
       summary: Start a task
-      description: Transitions a task to IN_PROGRESS status
+      description: Transitions a task from NEW to IN_PROGRESS status. If task runners are assigned, their payloads are dispatched asynchronously.
+      tags:
+        - Tasks
       parameters:
         - name: id
           in: path
@@ -116,6 +126,8 @@ paths:
     post:
       summary: Complete a task
       description: Transitions a task to COMPLETED status
+      tags:
+        - Tasks
       parameters:
         - name: id
           in: path
@@ -143,6 +155,8 @@ paths:
     post:
       summary: Fail a task
       description: Transitions a task to FAILED status
+      tags:
+        - Tasks
       parameters:
         - name: id
           in: path
@@ -164,6 +178,160 @@ paths:
           $ref: '#/components/responses/404'
         '422':
           $ref: '#/components/responses/422'
+        '500':
+          $ref: '#/components/responses/500'
+  /tasks/{taskId}/runners:
+    get:
+      summary: Get runners assigned to a task
+      description: Retrieves all task runners assigned to the specified task
+      tags:
+        - Task Runners
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          description: UUID of the task
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of runners retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskRunnersListResponse'
+        '400':
+          $ref: '#/components/responses/400'
+        '500':
+          $ref: '#/components/responses/500'
+  /task-runners:
+    post:
+      summary: Create a task runner
+      description: Creates a new task runner configuration
+      tags:
+        - Task Runners
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskRunnerRequest'
+      responses:
+        '201':
+          description: Task runner created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskRunnerResponse'
+        '400':
+          $ref: '#/components/responses/400'
+        '500':
+          $ref: '#/components/responses/500'
+    get:
+      summary: Get all task runners
+      description: Retrieves a list of all task runners
+      tags:
+        - Task Runners
+      responses:
+        '200':
+          description: List of task runners retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskRunnersListResponse'
+        '500':
+          $ref: '#/components/responses/500'
+  /task-runners/{id}:
+    get:
+      summary: Get a specific task runner
+      description: Retrieves a task runner by its ID
+      tags:
+        - Task Runners
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the task runner
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Task runner retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskRunnerResponse'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+  /task-runners/{id}/assign/{taskId}:
+    post:
+      summary: Assign a runner to a task
+      description: Creates an assignment between a task runner and a task. When the task is started, its payload will be dispatched to this runner.
+      tags:
+        - Task Runners
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the task runner
+          schema:
+            type: string
+            format: uuid
+        - name: taskId
+          in: path
+          required: true
+          description: UUID of the task to assign
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Task assigned to runner successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+    delete:
+      summary: Unassign a runner from a task
+      description: Removes the assignment between a task runner and a task
+      tags:
+        - Task Runners
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the task runner
+          schema:
+            type: string
+            format: uuid
+        - name: taskId
+          in: path
+          required: true
+          description: UUID of the task to unassign
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Task unassigned from runner successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          $ref: '#/components/responses/400'
         '500':
           $ref: '#/components/responses/500'
 
@@ -262,6 +430,70 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Task'
+    CreateTaskRunnerRequest:
+      type: object
+      required:
+        - name
+        - type
+        - config
+      properties:
+        name:
+          type: string
+          description: Human-readable name for the runner
+        type:
+          type: string
+          enum: [queue]
+          description: The runner backend type
+        config:
+          type: object
+          description: Backend-specific configuration (e.g. queue_url for SQS)
+          additionalProperties: true
+      example:
+        name: "SQS Runner"
+        type: "queue"
+        config:
+          queue_url: "http://localhost:9324/000000000000/nimbus-tasks"
+    TaskRunner:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The unique identifier of the task runner
+        name:
+          type: string
+          description: Human-readable name for the runner
+        type:
+          type: string
+          enum: [queue]
+          description: The runner backend type
+        config:
+          type: object
+          description: Backend-specific configuration
+          additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when the runner was created
+      example:
+        id: "987e6543-e21b-12d3-a456-426614174000"
+        name: "SQS Runner"
+        type: "queue"
+        config:
+          queue_url: "http://localhost:9324/000000000000/nimbus-tasks"
+        created_at: "2025-10-29T10:30:00Z"
+    TaskRunnerResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/TaskRunner'
+    TaskRunnersListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskRunner'
     MessageResponse:
       type: object
       properties:
@@ -276,7 +508,7 @@ components:
         message:
           type: string
           description: Error message describing what went wrong
-    
+
   responses:
     400:
       description: Bad Request
@@ -302,7 +534,7 @@ components:
             $ref: '#/components/schemas/ErrorResponse'
           example:
             message: "Cannot start task in current state"
-    500:        
+    500:
       description: Internal Server Error
       content:
         application/json:

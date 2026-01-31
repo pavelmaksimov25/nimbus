@@ -16,6 +16,17 @@ services:
     networks:
       - nimbus-network
 
+  elasticmq:
+    image: softwaremill/elasticmq
+    container_name: nimbus-elasticmq
+    ports:
+      - "9324:9324"
+      - "9325:9325"
+    volumes:
+      - ./config/elasticmq.conf:/opt/elasticmq.conf
+    networks:
+      - nimbus-network
+
   migration:
     image: golang:1.24-alpine
     container_name: nimbus-migration
