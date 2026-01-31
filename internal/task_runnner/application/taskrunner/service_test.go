@@ -24,7 +24,7 @@ func TestTaskRunnerService_CreateRunner(t *testing.T) {
 
 	input := &entity.TaskRunner{
 		Name:   "my-sqs-runner",
-		Type:   entity.Queue,
+		Type:   entity.AwsSqs,
 		Config: entity.TaskRunnerConfig{"queue_url": "http://localhost:9324/000000000000/nimbus-tasks"},
 	}
 
@@ -39,7 +39,7 @@ func TestTaskRunnerService_CreateRunner(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEqual(t, uuid.Nil, result.ID)
 	assert.Equal(t, "my-sqs-runner", result.Name)
-	assert.Equal(t, entity.Queue, result.Type)
+	assert.Equal(t, entity.AwsSqs, result.Type)
 	assert.False(t, result.CreatedAt.IsZero())
 }
 
@@ -51,8 +51,8 @@ func TestTaskRunnerService_GetRunners(t *testing.T) {
 	svc := NewTaskRunnerService(mockRepo, nil)
 
 	expected := []entity.TaskRunner{
-		{ID: uuid.New(), Name: "runner-1", Type: entity.Queue},
-		{ID: uuid.New(), Name: "runner-2", Type: entity.Queue},
+		{ID: uuid.New(), Name: "runner-1", Type: entity.AwsSqs},
+		{ID: uuid.New(), Name: "runner-2", Type: entity.AwsSqs},
 	}
 
 	mockRepo.EXPECT().GetAll().Return(expected, nil)
@@ -70,7 +70,7 @@ func TestTaskRunnerService_GetRunner(t *testing.T) {
 	mockRepo := mocks.NewMockTaskRunnerRepository(ctrl)
 	svc := NewTaskRunnerService(mockRepo, nil)
 
-	expected := &entity.TaskRunner{ID: uuid.New(), Name: "runner-1", Type: entity.Queue}
+	expected := &entity.TaskRunner{ID: uuid.New(), Name: "runner-1", Type: entity.AwsSqs}
 
 	mockRepo.EXPECT().GetByID(expected.ID).Return(expected, nil)
 
@@ -166,7 +166,7 @@ func TestTaskRunnerService_GetRunnersByTaskID(t *testing.T) {
 
 	taskID := uuid.New()
 	expected := []entity.TaskRunner{
-		{ID: uuid.New(), Name: "runner-1", Type: entity.Queue},
+		{ID: uuid.New(), Name: "runner-1", Type: entity.AwsSqs},
 	}
 
 	mockRepo.EXPECT().GetByTaskID(taskID).Return(expected, nil)
@@ -183,13 +183,13 @@ func TestTaskRunnerService_CreateRunner_ValidationError(t *testing.T) {
 
 	mockRepo := mocks.NewMockTaskRunnerRepository(ctrl)
 	validators := map[entity.TaskRunnerType]runner.ConfigValidator{
-		entity.Queue: sqs.NewConfigValidator(),
+		entity.AwsSqs: sqs.NewConfigValidator(),
 	}
 	svc := NewTaskRunnerService(mockRepo, validators)
 
 	input := &entity.TaskRunner{
 		Name:   "bad-runner",
-		Type:   entity.Queue,
+		Type:   entity.AwsSqs,
 		Config: entity.TaskRunnerConfig{"queue_url": "http://localhost:9324/queue"},
 	}
 
@@ -208,13 +208,13 @@ func TestTaskRunnerService_CreateRunner_ValidationSuccess(t *testing.T) {
 
 	mockRepo := mocks.NewMockTaskRunnerRepository(ctrl)
 	validators := map[entity.TaskRunnerType]runner.ConfigValidator{
-		entity.Queue: sqs.NewConfigValidator(),
+		entity.AwsSqs: sqs.NewConfigValidator(),
 	}
 	svc := NewTaskRunnerService(mockRepo, validators)
 
 	input := &entity.TaskRunner{
 		Name: "good-runner",
-		Type: entity.Queue,
+		Type: entity.AwsSqs,
 		Config: entity.TaskRunnerConfig{
 			"queue_url":  "http://localhost:9324/000000000000/nimbus-tasks",
 			"region":     "us-east-1",

@@ -8,7 +8,9 @@ import (
 	"nimbus/internal/task_runnner/domain/runner"
 
 	trRepo "nimbus/internal/task_runnner/adapters/repository/taskrunner"
+	echoAdapter "nimbus/internal/task_runnner/adapters/runner/echo"
 	sqsAdapter "nimbus/internal/task_runnner/adapters/runner/sqs"
+	"nimbus/internal/task_runnner/adapters/validation"
 	dispatchSvc "nimbus/internal/task_runnner/application/dispatch"
 	trSvc "nimbus/internal/task_runnner/application/taskrunner"
 
@@ -38,12 +40,14 @@ func main() {
 
 	// Runner factories
 	factories := map[trEntity.TaskRunnerType]runner.Factory{
-		trEntity.Queue: sqsAdapter.NewFactory(),
+		trEntity.AwsSqs: sqsAdapter.NewFactory(),
+		trEntity.Echo:   echoAdapter.NewFactory(),
 	}
 
 	// Config validators
 	validators := map[trEntity.TaskRunnerType]runner.ConfigValidator{
-		trEntity.Queue: sqsAdapter.NewConfigValidator(),
+		trEntity.AwsSqs: sqsAdapter.NewConfigValidator(),
+		trEntity.Echo:   validation.NewConfigValidator([]runner.FieldRule{}),
 	}
 
 	// Task runner module

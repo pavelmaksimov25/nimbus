@@ -444,18 +444,19 @@ components:
           description: Human-readable name for the runner
         type:
           type: string
-          enum: [queue]
+          enum: [aws_sqs, echo]
           description: The runner backend type
         config:
           type: object
           description: >
-            Backend-specific configuration. For type "queue" (SQS):
+            Backend-specific configuration. For type "aws_sqs":
             queue_url (required), region (required), access_key (required),
             secret_key (required), endpoint (optional, for ElasticMQ/LocalStack).
+            For type "echo": no config fields required.
           additionalProperties: true
       example:
         name: "SQS Runner"
-        type: "queue"
+        type: "aws_sqs"
         config:
           queue_url: "http://localhost:9324/000000000000/nimbus-tasks"
           region: "us-east-1"
@@ -474,7 +475,7 @@ components:
           description: Human-readable name for the runner
         type:
           type: string
-          enum: [queue]
+          enum: [aws_sqs, echo]
           description: The runner backend type
         config:
           type: object
@@ -487,7 +488,7 @@ components:
       example:
         id: "987e6543-e21b-12d3-a456-426614174000"
         name: "SQS Runner"
-        type: "queue"
+        type: "aws_sqs"
         config:
           queue_url: "http://localhost:9324/000000000000/nimbus-tasks"
           region: "us-east-1"

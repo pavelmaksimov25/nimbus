@@ -28,7 +28,8 @@ func (trt *TaskRunnerType) Value() (driver.Value, error) {
 }
 
 const (
-	Queue TaskRunnerType = "queue"
+	AwsSqs TaskRunnerType = "aws_sqs"
+	Echo   TaskRunnerType = "echo"
 )
 
 type TaskRunnerConfig map[string]interface{}
@@ -54,7 +55,7 @@ func (c *TaskRunnerConfig) Scan(value interface{}) error {
 type TaskRunner struct {
 	ID        uuid.UUID        `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Name      string           `json:"name" gorm:"type:varchar(255);not null"`
-	Type      TaskRunnerType   `json:"type" gorm:"type:task_runner_type;default:'queue'"`
+	Type      TaskRunnerType   `json:"type" gorm:"type:task_runner_type;default:'aws_sqs'"`
 	Config    TaskRunnerConfig `json:"config" gorm:"type:jsonb;default:'{}'"`
 	CreatedAt time.Time        `json:"created_at" gorm:"autoCreateTime"`
 }

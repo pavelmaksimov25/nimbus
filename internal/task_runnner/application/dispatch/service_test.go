@@ -30,7 +30,7 @@ func TestDispatchService_DispatchTask_FanOut(t *testing.T) {
 
 	executedCount := 0
 	factories := map[entity.TaskRunnerType]runner.Factory{
-		entity.Queue: func(config entity.TaskRunnerConfig) runner.Runner {
+		entity.AwsSqs: func(config entity.TaskRunnerConfig) runner.Runner {
 			return &mockRunner{err: nil}
 		},
 	}
@@ -39,14 +39,14 @@ func TestDispatchService_DispatchTask_FanOut(t *testing.T) {
 
 	taskID := uuid.New()
 	runners := []entity.TaskRunner{
-		{ID: uuid.New(), Name: "runner-1", Type: entity.Queue, Config: entity.TaskRunnerConfig{"queue_url": "url1"}},
-		{ID: uuid.New(), Name: "runner-2", Type: entity.Queue, Config: entity.TaskRunnerConfig{"queue_url": "url2"}},
+		{ID: uuid.New(), Name: "runner-1", Type: entity.AwsSqs, Config: entity.TaskRunnerConfig{"queue_url": "url1"}},
+		{ID: uuid.New(), Name: "runner-2", Type: entity.AwsSqs, Config: entity.TaskRunnerConfig{"queue_url": "url2"}},
 	}
 
 	mockRepo.EXPECT().GetByTaskID(taskID).Return(runners, nil)
 
 	// Override factory to count executions
-	factories[entity.Queue] = func(config entity.TaskRunnerConfig) runner.Runner {
+	factories[entity.AwsSqs] = func(config entity.TaskRunnerConfig) runner.Runner {
 		executedCount++
 		return &mockRunner{err: nil}
 	}
@@ -81,7 +81,7 @@ func TestDispatchService_DispatchTask_RunnerError(t *testing.T) {
 	mockRepo := mocks.NewMockTaskRunnerRepository(ctrl)
 
 	factories := map[entity.TaskRunnerType]runner.Factory{
-		entity.Queue: func(config entity.TaskRunnerConfig) runner.Runner {
+		entity.AwsSqs: func(config entity.TaskRunnerConfig) runner.Runner {
 			return &mockRunner{err: errors.New("send failed")}
 		},
 	}
@@ -90,7 +90,7 @@ func TestDispatchService_DispatchTask_RunnerError(t *testing.T) {
 
 	taskID := uuid.New()
 	runners := []entity.TaskRunner{
-		{ID: uuid.New(), Name: "runner-1", Type: entity.Queue, Config: entity.TaskRunnerConfig{"queue_url": "url1"}},
+		{ID: uuid.New(), Name: "runner-1", Type: entity.AwsSqs, Config: entity.TaskRunnerConfig{"queue_url": "url1"}},
 	}
 
 	mockRepo.EXPECT().GetByTaskID(taskID).Return(runners, nil)
