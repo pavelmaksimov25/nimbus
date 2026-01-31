@@ -88,6 +88,7 @@ func (t *taskHandler) handleStartTask(ctx *gin.Context) {
 		switch err.(type) {
 		case *types.RecordNotFoundError:
 			ctx.JSON(http.StatusNotFound, gin.H{"message": err.Error()})
+			return
 		case *types.UnprocessableEntityError:
 			ctx.JSON(http.StatusUnprocessableEntity, gin.H{"message": err.Error()})
 			return
@@ -115,6 +116,7 @@ func (t *taskHandler) handleCompleteTask(ctx *gin.Context) {
 		switch err.(type) {
 		case *types.RecordNotFoundError:
 			ctx.JSON(http.StatusNotFound, gin.H{"message": err.Error()})
+			return
 		case *types.UnprocessableEntityError:
 			ctx.JSON(http.StatusUnprocessableEntity, gin.H{"message": err.Error()})
 			return
@@ -122,7 +124,6 @@ func (t *taskHandler) handleCompleteTask(ctx *gin.Context) {
 			ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Internal Server Error"})
 			return
 		}
-
 	}
 	ctx.JSON(http.StatusOK, gin.H{"message": "Task completed"})
 }
@@ -143,6 +144,7 @@ func (t *taskHandler) handleFailTask(ctx *gin.Context) {
 		switch err.(type) {
 		case *types.RecordNotFoundError:
 			ctx.JSON(http.StatusNotFound, gin.H{"message": err.Error()})
+			return
 		case *types.UnprocessableEntityError:
 			ctx.JSON(http.StatusUnprocessableEntity, gin.H{"message": err.Error()})
 			return

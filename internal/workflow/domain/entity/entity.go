@@ -3,6 +3,7 @@ package entity
 import (
 	"database/sql/driver"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -16,10 +17,16 @@ func (j JSONB) Value() (driver.Value, error) {
 }
 
 func (j *JSONB) Scan(value interface{}) error {
-	if err := json.Unmarshal(value.([]byte), &j); err != nil {
-		return err
+	var bytes []byte
+	switch v := value.(type) {
+	case []byte:
+		bytes = v
+	case string:
+		bytes = []byte(v)
+	default:
+		return fmt.Errorf("unsupported type for JSONB: %T", value)
 	}
-	return nil
+	return json.Unmarshal(bytes, j)
 }
 
 type Workflow struct {
@@ -47,7 +54,14 @@ const (
 )
 
 func (ts *TaskStatus) Scan(value interface{}) error {
-	*ts = TaskStatus(value.([]byte))
+	switch v := value.(type) {
+	case []byte:
+		*ts = TaskStatus(v)
+	case string:
+		*ts = TaskStatus(v)
+	default:
+		return fmt.Errorf("unsupported type for TaskStatus: %T", value)
+	}
 	return nil
 }
 
