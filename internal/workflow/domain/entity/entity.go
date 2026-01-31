@@ -39,6 +39,7 @@ type Task struct {
 	ID         uuid.UUID  `json:"id,omitempty" gorm:"type:uuid;default:uuid_generate_v4()"`
 	Payload    string     `json:"payload" gorm:"type:jsonb"`
 	WorkflowID uuid.UUID  `json:"workflow_id" gorm:"type:uuid"`
+	RunnerID   uuid.UUID  `json:"runner_id" gorm:"type:uuid"`
 	Status     TaskStatus `json:"status" gorm:"type:TaskStatus;default:'NEW'"`
 	CreatedAt  time.Time  `json:"created_at,omitempty" gorm:"autoCreateTime"`
 	FailReason string     `json:"fail_reason,omitempty" gorm:"type:text"`

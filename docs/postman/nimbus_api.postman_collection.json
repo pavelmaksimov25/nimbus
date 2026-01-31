@@ -33,10 +33,17 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"if (pm.response.code === 201) {",
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Response has workflow data', function () {",
 									"    var json = pm.response.json();",
+									"    pm.expect(json.data).to.have.property('id');",
+									"    pm.expect(json.data).to.have.property('name');",
+									"    pm.expect(json.data).to.have.property('created_at');",
 									"    pm.collectionVariables.set('workflow_id', json.data.id);",
-									"}"
+									"});"
 								],
 								"type": "text/javascript"
 							}
@@ -77,10 +84,19 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"if (pm.response.code === 201) {",
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Response has task data with NEW status and runner_id', function () {",
 									"    var json = pm.response.json();",
+									"    pm.expect(json.data).to.have.property('id');",
+									"    pm.expect(json.data).to.have.property('payload');",
+									"    pm.expect(json.data).to.have.property('workflow_id');",
+									"    pm.expect(json.data).to.have.property('runner_id');",
+									"    pm.expect(json.data.status).to.eql('NEW');",
 									"    pm.collectionVariables.set('task_id', json.data.id);",
-									"}"
+									"});"
 								],
 								"type": "text/javascript"
 							}
@@ -122,7 +138,25 @@
 								"tasks"
 							]
 						}
-					}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has data array', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.data).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
 				},
 				{
 					"name": "Get Task by ID",
@@ -138,7 +172,27 @@
 								"{{task_id}}"
 							]
 						}
-					}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has correct task with runner_id', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.data).to.have.property('id');",
+									"    pm.expect(json.data.id).to.eql(pm.collectionVariables.get('task_id'));",
+									"    pm.expect(json.data).to.have.property('runner_id');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
 				},
 				{
 					"name": "Start Task",
@@ -155,7 +209,25 @@
 								"start"
 							]
 						}
-					}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has success message', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.message).to.eql('Task started');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
 				},
 				{
 					"name": "Complete Task",
@@ -172,7 +244,25 @@
 								"complete"
 							]
 						}
-					}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has success message', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.message).to.eql('Task completed');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
 				},
 				{
 					"name": "Fail Task",
@@ -189,7 +279,25 @@
 								"fail"
 							]
 						}
-					}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has success message', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.message).to.eql('Task marked as failed');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
 				},
 				{
 					"name": "Get Runners for Task",
@@ -206,7 +314,25 @@
 								"runners"
 							]
 						}
-					}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has data array', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.data).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
 				}
 			]
 		},
@@ -220,10 +346,18 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"if (pm.response.code === 201) {",
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Response has runner data', function () {",
 									"    var json = pm.response.json();",
+									"    pm.expect(json.data).to.have.property('id');",
+									"    pm.expect(json.data).to.have.property('name');",
+									"    pm.expect(json.data).to.have.property('type');",
+									"    pm.expect(json.data).to.have.property('config');",
 									"    pm.collectionVariables.set('runner_id', json.data.id);",
-									"}"
+									"});"
 								],
 								"type": "text/javascript"
 							}
@@ -265,7 +399,25 @@
 								"task-runners"
 							]
 						}
-					}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has data array', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.data).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
 				},
 				{
 					"name": "Get Task Runner by ID",
@@ -281,7 +433,26 @@
 								"{{runner_id}}"
 							]
 						}
-					}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has correct runner', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.data).to.have.property('id');",
+									"    pm.expect(json.data.id).to.eql(pm.collectionVariables.get('runner_id'));",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
 				},
 				{
 					"name": "Assign Runner to Task",
@@ -299,7 +470,25 @@
 								"{{task_id}}"
 							]
 						}
-					}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has success message', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.message).to.be.a('string');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
 				},
 				{
 					"name": "Unassign Runner from Task",
@@ -317,7 +506,25 @@
 								"{{task_id}}"
 							]
 						}
-					}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has success message', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.message).to.be.a('string');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
 				}
 			]
 		},
@@ -331,10 +538,16 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"if (pm.response.code === 201) {",
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Workflow created and ID saved', function () {",
 									"    var json = pm.response.json();",
+									"    pm.expect(json.data).to.have.property('id');",
+									"    pm.expect(json.data).to.have.property('name', 'E2E Test Workflow');",
 									"    pm.collectionVariables.set('workflow_id', json.data.id);",
-									"}"
+									"});"
 								],
 								"type": "text/javascript"
 							}
@@ -370,10 +583,16 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"if (pm.response.code === 201) {",
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Runner created and ID saved', function () {",
 									"    var json = pm.response.json();",
+									"    pm.expect(json.data).to.have.property('id');",
+									"    pm.expect(json.data.type).to.eql('aws_sqs');",
 									"    pm.collectionVariables.set('runner_id', json.data.id);",
-									"}"
+									"});"
 								],
 								"type": "text/javascript"
 							}
@@ -409,10 +628,18 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"if (pm.response.code === 201) {",
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Task created with NEW status, runner_id, and ID saved', function () {",
 									"    var json = pm.response.json();",
+									"    pm.expect(json.data).to.have.property('id');",
+									"    pm.expect(json.data.status).to.eql('NEW');",
+									"    pm.expect(json.data).to.have.property('runner_id');",
+									"    pm.expect(json.data.runner_id).to.eql(pm.collectionVariables.get('runner_id'));",
 									"    pm.collectionVariables.set('task_id', json.data.id);",
-									"}"
+									"});"
 								],
 								"type": "text/javascript"
 							}
@@ -456,7 +683,25 @@
 								"start"
 							]
 						}
-					}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Task started successfully', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.message).to.eql('Task started');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
 				},
 				{
 					"name": "5. Verify Runners for Task",
@@ -473,7 +718,27 @@
 								"runners"
 							]
 						}
-					}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Task has assigned runner', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.data).to.be.an('array');",
+									"    pm.expect(json.data.length).to.be.above(0);",
+									"    pm.expect(json.data[0].id).to.eql(pm.collectionVariables.get('runner_id'));",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
 				}
 			]
 		}

@@ -34,6 +34,7 @@ func (ts *taskService) CreateTask(task *entity.Task, runnerID uuid.UUID) (*entit
 	}
 
 	task.ID = uuid.New()
+	task.RunnerID = runnerID
 	task.Status = entity.StatusNew
 	task.CreatedAt = time.Now()
 

@@ -52,6 +52,7 @@ func TestTaskService_CreateTask(t *testing.T) {
 	assert.IsType(t, uuid.UUID{}, resultTask.ID)
 	assert.Equal(t, "Test Payload", resultTask.Payload)
 	assert.Equal(t, entity.StatusNew, resultTask.Status)
+	assert.Equal(t, runnerID, resultTask.RunnerID)
 }
 
 func TestTaskService_CreateTask_RunnerNotFound(t *testing.T) {

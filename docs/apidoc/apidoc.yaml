@@ -410,6 +410,10 @@ components:
           type: string
           format: uuid
           description: The ID of the workflow this task belongs to
+        runner_id:
+          type: string
+          format: uuid
+          description: The ID of the task runner assigned to this task
         status:
           type: string
           enum: [NEW, IN_PROGRESS, COMPLETED, FAILED]
@@ -425,6 +429,7 @@ components:
         id: "123e4567-e89b-12d3-a456-426614174000"
         payload: "Sample task payload"
         workflow_id: "123e4567-e89b-12d3-a456-426614174000"
+        runner_id: "987e6543-e21b-12d3-a456-426614174000"
         status: "NEW"
         created_at: "2025-10-29T10:30:00Z"
         fail_reason: ""
