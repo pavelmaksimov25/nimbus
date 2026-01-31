@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	trEntity "nimbus/internal/task_runnner/domain/entity"
 	trMocks "nimbus/internal/task_runnner/domain/service/mocks"
 	"nimbus/internal/workflow/domain/entity"
 	"nimbus/internal/workflow/domain/repository/mocks"
@@ -20,12 +21,18 @@ func TestTaskService_CreateTask(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockTaskRepository(ctrl)
-	taskService := NewTaskService(mockRepo, nil)
+	mockRunnerSvc := trMocks.NewMockTaskRunnerService(ctrl)
+	taskService := NewTaskService(mockRepo, nil, mockRunnerSvc)
 
+	runnerID := uuid.New()
 	inputTask := &entity.Task{
 		Payload:    "Test Payload",
 		WorkflowID: uuid.New(),
 	}
+
+	mockRunnerSvc.EXPECT().
+		GetRunner(runnerID).
+		Return(&trEntity.TaskRunner{ID: runnerID, Name: "Echo Runner", Type: trEntity.Echo}, nil)
 
 	mockRepo.EXPECT().
 		StoreTask(gomock.Any()).
@@ -33,8 +40,12 @@ func TestTaskService_CreateTask(t *testing.T) {
 			return task, nil
 		})
 
+	mockRunnerSvc.EXPECT().
+		AssignTask(runnerID, gomock.Any()).
+		Return(nil)
+
 	// Act
-	resultTask, err := taskService.CreateTask(inputTask)
+	resultTask, err := taskService.CreateTask(inputTask, runnerID)
 
 	// Assert
 	assert.NoError(t, err)
@@ -43,13 +54,41 @@ func TestTaskService_CreateTask(t *testing.T) {
 	assert.Equal(t, entity.StatusNew, resultTask.Status)
 }
 
+func TestTaskService_CreateTask_RunnerNotFound(t *testing.T) {
+	// Arrange
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := mocks.NewMockTaskRepository(ctrl)
+	mockRunnerSvc := trMocks.NewMockTaskRunnerService(ctrl)
+	taskService := NewTaskService(mockRepo, nil, mockRunnerSvc)
+
+	runnerID := uuid.New()
+	inputTask := &entity.Task{
+		Payload:    "Test Payload",
+		WorkflowID: uuid.New(),
+	}
+
+	mockRunnerSvc.EXPECT().
+		GetRunner(runnerID).
+		Return(nil, &types.RecordNotFoundError{Resource: "TaskRunner", ID: runnerID.String()})
+
+	// Act
+	resultTask, err := taskService.CreateTask(inputTask, runnerID)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, resultTask)
+	assert.IsType(t, &types.RecordNotFoundError{}, err)
+}
+
 func TestTaskService_GetTasks(t *testing.T) {
 	// Arrange
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockTaskRepository(ctrl)
-	taskService := NewTaskService(mockRepo, nil)
+	taskService := NewTaskService(mockRepo, nil, nil)
 
 	expectedTask := entity.Task{
 		ID:         uuid.New(),
@@ -78,7 +117,7 @@ func TestTaskService_GetTask(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockTaskRepository(ctrl)
-	taskService := NewTaskService(mockRepo, nil)
+	taskService := NewTaskService(mockRepo, nil, nil)
 
 	expectedTask := &entity.Task{
 		ID:         uuid.New(),
@@ -107,7 +146,7 @@ func TestTaskService_GetTask_NotFound(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockTaskRepository(ctrl)
-	taskService := NewTaskService(mockRepo, nil)
+	taskService := NewTaskService(mockRepo, nil, nil)
 	nonExistentID := uuid.New()
 
 	mockRepo.EXPECT().
@@ -128,7 +167,7 @@ func TestTaskService_StartTask(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockTaskRepository(ctrl)
-	taskService := NewTaskService(mockRepo, nil)
+	taskService := NewTaskService(mockRepo, nil, nil)
 
 	existingTask := &entity.Task{
 		ID:         uuid.New(),
@@ -182,7 +221,7 @@ func TestTaskService_StartTask_InvalidTaskStatus(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockRepo := mocks.NewMockTaskRepository(ctrl)
-			taskService := NewTaskService(mockRepo, nil)
+			taskService := NewTaskService(mockRepo, nil, nil)
 
 			taskCopy := existingTask
 			mockRepo.EXPECT().
@@ -204,7 +243,7 @@ func TestTaskService_StartTask_NotFound(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockTaskRepository(ctrl)
-	taskService := NewTaskService(mockRepo, nil)
+	taskService := NewTaskService(mockRepo, nil, nil)
 	nonExistentID := uuid.New()
 
 	mockRepo.EXPECT().
@@ -224,7 +263,7 @@ func TestTaskService_CompleteTask(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockTaskRepository(ctrl)
-	taskService := NewTaskService(mockRepo, nil)
+	taskService := NewTaskService(mockRepo, nil, nil)
 
 	inProgressTask := &entity.Task{
 		ID:         uuid.New(),
@@ -284,7 +323,7 @@ func TestTaskService_CompleteTask_InvalidTaskStatus(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockRepo := mocks.NewMockTaskRepository(ctrl)
-			taskService := NewTaskService(mockRepo, nil)
+			taskService := NewTaskService(mockRepo, nil, nil)
 
 			taskCopy := existingTask
 			mockRepo.EXPECT().
@@ -306,7 +345,7 @@ func TestTaskService_CompleteTask_NotFound(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockTaskRepository(ctrl)
-	taskService := NewTaskService(mockRepo, nil)
+	taskService := NewTaskService(mockRepo, nil, nil)
 	nonExistentID := uuid.New()
 
 	mockRepo.EXPECT().
@@ -326,7 +365,7 @@ func TestTaskService_FailTask(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockTaskRepository(ctrl)
-	taskService := NewTaskService(mockRepo, nil)
+	taskService := NewTaskService(mockRepo, nil, nil)
 
 	inProgressTask := &entity.Task{
 		ID:      uuid.New(),
@@ -359,7 +398,7 @@ func TestTaskService_FailTask_NotFound(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockTaskRepository(ctrl)
-	taskService := NewTaskService(mockRepo, nil)
+	taskService := NewTaskService(mockRepo, nil, nil)
 	nonExistentID := uuid.New()
 
 	mockRepo.EXPECT().
@@ -400,7 +439,7 @@ func TestTaskService_FailTask_InvalidTaskStatus(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockRepo := mocks.NewMockTaskRepository(ctrl)
-			taskService := NewTaskService(mockRepo, nil)
+			taskService := NewTaskService(mockRepo, nil, nil)
 
 			taskCopy := existingTask
 			mockRepo.EXPECT().
@@ -423,7 +462,7 @@ func TestTaskService_StartTask_DispatcheToRunners(t *testing.T) {
 
 	mockRepo := mocks.NewMockTaskRepository(ctrl)
 	mockDispatch := trMocks.NewMockDispatchService(ctrl)
-	taskService := NewTaskService(mockRepo, mockDispatch)
+	taskService := NewTaskService(mockRepo, mockDispatch, nil)
 
 	existingTask := &entity.Task{
 		ID:         uuid.New(),

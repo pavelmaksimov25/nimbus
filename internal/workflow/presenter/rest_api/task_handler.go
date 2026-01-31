@@ -32,20 +32,36 @@ func (t *taskHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	rg.POST("/tasks/:id/fail", t.handleFailTask)
 }
 
+type createTaskRequest struct {
+	Payload    string    `json:"payload" binding:"required"`
+	WorkflowID uuid.UUID `json:"workflow_id" binding:"required"`
+	RunnerID   uuid.UUID `json:"runner_id" binding:"required"`
+}
+
 func (t *taskHandler) handleCreateTask(ctx *gin.Context) {
-	var task entity.Task
-	err := ctx.ShouldBindJSON(&task)
-	if err != nil {
+	var req createTaskRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		log.Printf("%s", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
 
-	taskEntity, err := t.service.CreateTask(&task)
+	task := &entity.Task{
+		Payload:    req.Payload,
+		WorkflowID: req.WorkflowID,
+	}
+
+	taskEntity, err := t.service.CreateTask(task, req.RunnerID)
 	if err != nil {
 		log.Printf("Error storing task: %s", err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Internal Server Error"})
-		return
+		switch err.(type) {
+		case *types.RecordNotFoundError:
+			ctx.JSON(http.StatusNotFound, gin.H{"message": err.Error()})
+			return
+		default:
+			ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Internal Server Error"})
+			return
+		}
 	}
 
 	fmt.Printf("Created Task: %v", taskEntity)

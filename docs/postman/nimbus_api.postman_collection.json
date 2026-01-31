@@ -56,8 +56,12 @@
 						},
 						"url": {
 							"raw": "{{base_url}}/workflows",
-							"host": ["{{base_url}}"],
-							"path": ["workflows"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"workflows"
+							]
 						}
 					}
 				}
@@ -92,12 +96,16 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"payload\": \"{\\\"action\\\": \\\"process_data\\\", \\\"data\\\": {\\\"key\\\": \\\"value\\\"}}\",\n    \"workflow_id\": \"{{workflow_id}}\"\n}"
+							"raw": "{\n    \"payload\": \"{\\\"action\\\": \\\"process_data\\\", \\\"data\\\": {\\\"key\\\": \\\"value\\\"}}\",\n    \"workflow_id\": \"{{workflow_id}}\",\n    \"runner_id\": \"{{runner_id}}\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/tasks",
-							"host": ["{{base_url}}"],
-							"path": ["tasks"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tasks"
+							]
 						}
 					}
 				},
@@ -107,8 +115,12 @@
 						"method": "GET",
 						"url": {
 							"raw": "{{base_url}}/tasks",
-							"host": ["{{base_url}}"],
-							"path": ["tasks"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tasks"
+							]
 						}
 					}
 				},
@@ -118,8 +130,13 @@
 						"method": "GET",
 						"url": {
 							"raw": "{{base_url}}/tasks/{{task_id}}",
-							"host": ["{{base_url}}"],
-							"path": ["tasks", "{{task_id}}"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tasks",
+								"{{task_id}}"
+							]
 						}
 					}
 				},
@@ -129,8 +146,14 @@
 						"method": "POST",
 						"url": {
 							"raw": "{{base_url}}/tasks/{{task_id}}/start",
-							"host": ["{{base_url}}"],
-							"path": ["tasks", "{{task_id}}", "start"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tasks",
+								"{{task_id}}",
+								"start"
+							]
 						}
 					}
 				},
@@ -140,8 +163,14 @@
 						"method": "POST",
 						"url": {
 							"raw": "{{base_url}}/tasks/{{task_id}}/complete",
-							"host": ["{{base_url}}"],
-							"path": ["tasks", "{{task_id}}", "complete"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tasks",
+								"{{task_id}}",
+								"complete"
+							]
 						}
 					}
 				},
@@ -151,8 +180,14 @@
 						"method": "POST",
 						"url": {
 							"raw": "{{base_url}}/tasks/{{task_id}}/fail",
-							"host": ["{{base_url}}"],
-							"path": ["tasks", "{{task_id}}", "fail"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tasks",
+								"{{task_id}}",
+								"fail"
+							]
 						}
 					}
 				},
@@ -162,8 +197,14 @@
 						"method": "GET",
 						"url": {
 							"raw": "{{base_url}}/tasks/{{task_id}}/runners",
-							"host": ["{{base_url}}"],
-							"path": ["tasks", "{{task_id}}", "runners"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tasks",
+								"{{task_id}}",
+								"runners"
+							]
 						}
 					}
 				}
@@ -202,8 +243,12 @@
 						},
 						"url": {
 							"raw": "{{base_url}}/task-runners",
-							"host": ["{{base_url}}"],
-							"path": ["task-runners"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"task-runners"
+							]
 						}
 					}
 				},
@@ -213,8 +258,12 @@
 						"method": "GET",
 						"url": {
 							"raw": "{{base_url}}/task-runners",
-							"host": ["{{base_url}}"],
-							"path": ["task-runners"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"task-runners"
+							]
 						}
 					}
 				},
@@ -224,8 +273,13 @@
 						"method": "GET",
 						"url": {
 							"raw": "{{base_url}}/task-runners/{{runner_id}}",
-							"host": ["{{base_url}}"],
-							"path": ["task-runners", "{{runner_id}}"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"task-runners",
+								"{{runner_id}}"
+							]
 						}
 					}
 				},
@@ -235,8 +289,15 @@
 						"method": "POST",
 						"url": {
 							"raw": "{{base_url}}/task-runners/{{runner_id}}/assign/{{task_id}}",
-							"host": ["{{base_url}}"],
-							"path": ["task-runners", "{{runner_id}}", "assign", "{{task_id}}"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"task-runners",
+								"{{runner_id}}",
+								"assign",
+								"{{task_id}}"
+							]
 						}
 					}
 				},
@@ -246,15 +307,22 @@
 						"method": "DELETE",
 						"url": {
 							"raw": "{{base_url}}/task-runners/{{runner_id}}/assign/{{task_id}}",
-							"host": ["{{base_url}}"],
-							"path": ["task-runners", "{{runner_id}}", "assign", "{{task_id}}"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"task-runners",
+								"{{runner_id}}",
+								"assign",
+								"{{task_id}}"
+							]
 						}
 					}
 				}
 			]
 		},
 		{
-			"name": "E2E: Create Runner -> Task -> Assign -> Start",
+			"name": "E2E: Create Runner -> Task -> Start",
 			"item": [
 				{
 					"name": "1. Create Workflow",
@@ -286,8 +354,12 @@
 						},
 						"url": {
 							"raw": "{{base_url}}/workflows",
-							"host": ["{{base_url}}"],
-							"path": ["workflows"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"workflows"
+							]
 						}
 					}
 				},
@@ -321,8 +393,12 @@
 						},
 						"url": {
 							"raw": "{{base_url}}/task-runners",
-							"host": ["{{base_url}}"],
-							"path": ["task-runners"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"task-runners"
+							]
 						}
 					}
 				},
@@ -352,45 +428,50 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"payload\": \"{\\\"action\\\": \\\"process_data\\\", \\\"key\\\": \\\"value\\\"}\",\n    \"workflow_id\": \"{{workflow_id}}\"\n}"
+							"raw": "{\n    \"payload\": \"{\\\"action\\\": \\\"process_data\\\", \\\"key\\\": \\\"value\\\"}\",\n    \"workflow_id\": \"{{workflow_id}}\",\n    \"runner_id\": \"{{runner_id}}\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/tasks",
-							"host": ["{{base_url}}"],
-							"path": ["tasks"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tasks"
+							]
 						}
 					}
 				},
 				{
-					"name": "4. Assign Runner to Task",
-					"request": {
-						"method": "POST",
-						"url": {
-							"raw": "{{base_url}}/task-runners/{{runner_id}}/assign/{{task_id}}",
-							"host": ["{{base_url}}"],
-							"path": ["task-runners", "{{runner_id}}", "assign", "{{task_id}}"]
-						}
-					}
-				},
-				{
-					"name": "5. Start Task (dispatches to SQS)",
+					"name": "4. Start Task (dispatches to SQS)",
 					"request": {
 						"method": "POST",
 						"url": {
 							"raw": "{{base_url}}/tasks/{{task_id}}/start",
-							"host": ["{{base_url}}"],
-							"path": ["tasks", "{{task_id}}", "start"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tasks",
+								"{{task_id}}",
+								"start"
+							]
 						}
 					}
 				},
 				{
-					"name": "6. Verify Runners for Task",
+					"name": "5. Verify Runners for Task",
 					"request": {
 						"method": "GET",
 						"url": {
 							"raw": "{{base_url}}/tasks/{{task_id}}/runners",
-							"host": ["{{base_url}}"],
-							"path": ["tasks", "{{task_id}}", "runners"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tasks",
+								"{{task_id}}",
+								"runners"
+							]
 						}
 					}
 				}

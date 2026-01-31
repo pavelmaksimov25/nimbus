@@ -14,23 +14,39 @@ import (
 )
 
 type taskService struct {
-	repository      repository.TaskRepository
-	dispatchService trService.DispatchService
+	repository        repository.TaskRepository
+	dispatchService   trService.DispatchService
+	taskRunnerService trService.TaskRunnerService
 }
 
-func NewTaskService(repository repository.TaskRepository, dispatchService trService.DispatchService) service.TaskService {
+func NewTaskService(repository repository.TaskRepository, dispatchService trService.DispatchService, taskRunnerService trService.TaskRunnerService) service.TaskService {
 	return &taskService{
-		repository:      repository,
-		dispatchService: dispatchService,
+		repository:        repository,
+		dispatchService:   dispatchService,
+		taskRunnerService: taskRunnerService,
 	}
 }
 
-func (ts *taskService) CreateTask(task *entity.Task) (*entity.Task, error) {
+func (ts *taskService) CreateTask(task *entity.Task, runnerID uuid.UUID) (*entity.Task, error) {
+	_, err := ts.taskRunnerService.GetRunner(runnerID)
+	if err != nil {
+		return nil, &types.RecordNotFoundError{Resource: "TaskRunner", ID: runnerID.String()}
+	}
+
 	task.ID = uuid.New()
 	task.Status = entity.StatusNew
 	task.CreatedAt = time.Now()
 
-	return ts.repository.StoreTask(task)
+	storedTask, err := ts.repository.StoreTask(task)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := ts.taskRunnerService.AssignTask(runnerID, storedTask.ID); err != nil {
+		return nil, err
+	}
+
+	return storedTask, nil
 }
 
 func (ts *taskService) GetTasks() []entity.Task {

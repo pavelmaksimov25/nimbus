@@ -11,7 +11,7 @@ type WorkflowService interface {
 }
 
 type TaskService interface {
-	CreateTask(task *entity.Task) (*entity.Task, error)
+	CreateTask(task *entity.Task, runnerID uuid.UUID) (*entity.Task, error)
 	GetTasks() []entity.Task
 	GetTask(id uuid.UUID) (*entity.Task, error)
 	StartTask(id uuid.UUID) error

@@ -57,7 +57,7 @@ func main() {
 
 	// Workflow module
 	taskRepo := taskRepository.NewTaskRepository(dbConn)
-	taskService := task.NewTaskService(taskRepo, dispatchService)
+	taskService := task.NewTaskService(taskRepo, dispatchService, taskRunnerService)
 
 	workflowRepo := workflowRepository.NewWorkflowRepository(dbConn)
 	wfService := workflowService.NewWorkflowService(workflowRepo)
