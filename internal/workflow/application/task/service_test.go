@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	trEntity "nimbus/internal/task_runnner/domain/entity"
 	trMocks "nimbus/internal/task_runnner/application/mocks"
+	trEntity "nimbus/internal/task_runnner/domain/entity"
 	"nimbus/internal/workflow/adapters/mocks"
 	"nimbus/internal/workflow/domain/entity"
 	"nimbus/internal/workflow/domain/types"

@@ -3,9 +3,9 @@ package taskrunner
 import (
 	"testing"
 
+	"nimbus/internal/task_runnner/adapters/mocks"
 	"nimbus/internal/task_runnner/adapters/runner/sqs"
 	"nimbus/internal/task_runnner/domain/entity"
-	"nimbus/internal/task_runnner/adapters/mocks"
 	"nimbus/internal/task_runnner/domain/runner"
 	"nimbus/internal/workflow/domain/types"
 
