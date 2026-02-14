@@ -32,6 +32,14 @@ func (t *taskHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	rg.POST("/tasks/:id/fail", t.handleFailTask)
 }
 
+type completeTaskRequest struct {
+	AdditionalPayload string `json:"additional_payload"`
+}
+
+type failTaskRequest struct {
+	Reason string `json:"reason" binding:"required"`
+}
+
 type createTaskRequest struct {
 	Payload    string    `json:"payload" binding:"required,max=262144"`
 	WorkflowID uuid.UUID `json:"workflow_id" binding:"required"`
@@ -124,9 +132,10 @@ func (t *taskHandler) handleCompleteTask(ctx *gin.Context) {
 		return
 	}
 
-	// mock data for completion
-	completionPayload := ""
-	err = t.service.CompleteTask(id, completionPayload)
+	var req completeTaskRequest
+	_ = ctx.ShouldBindJSON(&req)
+
+	err = t.service.CompleteTask(id, req.AdditionalPayload)
 	if err != nil {
 		log.Printf("Error completing task: %s", err)
 		switch err.(type) {
@@ -152,9 +161,14 @@ func (t *taskHandler) handleFailTask(ctx *gin.Context) {
 		return
 	}
 
-	// mock reason for failure
-	reason := "Simulated failure"
-	err = t.service.FailTask(id, reason)
+	var req failTaskRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		log.Printf("Invalid fail task request: %s", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+
+	err = t.service.FailTask(id, req.Reason)
 	if err != nil {
 		log.Printf("Error failing task: %s", err)
 		switch err.(type) {

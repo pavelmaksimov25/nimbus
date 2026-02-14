@@ -29,6 +29,47 @@ paths:
           $ref: '#/components/responses/400'
         '500':
           $ref: '#/components/responses/500'
+    get:
+      summary: Get all workflows
+      description: Retrieves a list of all workflows
+      tags:
+        - Workflows
+      responses:
+        '200':
+          description: List of workflows retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowsListResponse'
+        '500':
+          $ref: '#/components/responses/500'
+  /workflows/{id}:
+    get:
+      summary: Get a specific workflow
+      description: Retrieves a workflow by its ID
+      tags:
+        - Workflows
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID of the workflow to retrieve
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Workflow retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowResponse'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
   /tasks:
     post:
       summary: Create a new task
@@ -127,7 +168,7 @@ paths:
   /tasks/{id}/complete:
     post:
       summary: Complete a task
-      description: Transitions a task to COMPLETED status
+      description: Transitions a task to COMPLETED status. Optionally accepts additional payload to append to the task.
       tags:
         - Tasks
       parameters:
@@ -138,6 +179,12 @@ paths:
           schema:
             type: string
             format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteTaskRequest'
       responses:
         '200':
           description: Task completed successfully
@@ -156,7 +203,7 @@ paths:
   /tasks/{id}/fail:
     post:
       summary: Fail a task
-      description: Transitions a task to FAILED status
+      description: Transitions a task to FAILED status with a required failure reason
       tags:
         - Tasks
       parameters:
@@ -167,6 +214,12 @@ paths:
           schema:
             type: string
             format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FailTaskRequest'
       responses:
         '200':
           description: Task marked as failed successfully
@@ -374,6 +427,31 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/Workflow'
+    WorkflowsListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Workflow'
+    CompleteTaskRequest:
+      type: object
+      properties:
+        additional_payload:
+          type: string
+          description: Additional payload data to append to the task
+      example:
+        additional_payload: " - completion result data"
+    FailTaskRequest:
+      type: object
+      required:
+        - reason
+      properties:
+        reason:
+          type: string
+          description: The reason for task failure
+      example:
+        reason: "Timeout exceeded"
     CreateTaskRequest:
       type: object
       required:

@@ -8,6 +8,8 @@ import (
 
 type WorkflowService interface {
 	CreateWorkflow(name string) (*entity.Workflow, error)
+	GetWorkflows() []entity.Workflow
+	GetWorkflow(id uuid.UUID) (*entity.Workflow, error)
 }
 
 type TaskService interface {

@@ -6,9 +6,9 @@ import (
 	"time"
 
 	trEntity "nimbus/internal/task_runnner/domain/entity"
-	trMocks "nimbus/internal/task_runnner/domain/service/mocks"
+	trMocks "nimbus/internal/task_runnner/application/mocks"
+	"nimbus/internal/workflow/adapters/mocks"
 	"nimbus/internal/workflow/domain/entity"
-	"nimbus/internal/workflow/domain/repository/mocks"
 	"nimbus/internal/workflow/domain/types"
 
 	"github.com/google/uuid"

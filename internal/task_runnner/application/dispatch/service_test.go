@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"nimbus/internal/task_runnner/domain/entity"
-	"nimbus/internal/task_runnner/domain/repository/mocks"
+	"nimbus/internal/task_runnner/adapters/mocks"
 	"nimbus/internal/task_runnner/domain/runner"
 
 	"github.com/google/uuid"
