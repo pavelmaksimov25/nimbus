@@ -7,6 +7,7 @@ import (
 	trRestApi "nimbus/internal/task_runnner/presenter/rest_api"
 	"nimbus/internal/workflow/domain/service"
 
+	"github.com/gin-contrib/requestid"
 	"github.com/gin-gonic/gin"
 )
 
@@ -32,6 +33,10 @@ func maxBodySize() gin.HandlerFunc {
 }
 
 func (t *ApiServer) RegisterRoutes(taskService service.TaskService, workflowService service.WorkflowService, taskRunnerService trService.TaskRunnerService) {
+	t.router.Use(requestid.New())
+	t.router.Use(NewSecureMiddleware())
+	t.router.Use(NewCorsMiddleware())
+	t.router.Use(NewRateLimiterMiddleware())
 	t.router.Use(maxBodySize())
 	rg := t.router.Group(routePrefix)
 
