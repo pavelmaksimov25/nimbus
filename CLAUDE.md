@@ -12,9 +12,16 @@ Nimbus is a distributed workflow engine in Go providing task management through 
 make dev              # Start dev environment (db + migrations + app on :8080)
 make test             # Run tests with race detection and coverage
 make test-coverage    # Generate HTML coverage report (coverage.html)
-make lint             # Run golangci-lint
+make lint             # Run go vet + golangci-lint
 make build            # Build Linux binary to bin/nimbus
 make run              # Run app locally (requires DB running)
+make ci               # Run full CI pipeline locally (lint + test + security + build)
+
+# Security
+make security                # Run all security scanners
+make security-govulncheck    # Check known CVEs in dependencies
+make security-gosec          # SAST scanner for Go
+make security-staticcheck    # Advanced static analysis
 
 # Database
 make db-start         # Start PostgreSQL via docker-compose
@@ -67,11 +74,27 @@ internal/workflow/
 - **Go 1.24**, **Gin** (HTTP), **GORM** (ORM), **PostgreSQL 16**
 - **goose** for SQL migrations (`migrations/` directory)
 - **uber/mock** for mock generation, **testify** for assertions
-- Config via `.env` file loaded with `godotenv` (key var: `DB_DSN`)
+- Config via `.env` file loaded with `godotenv` (key vars: `DB_DSN`, `CORS_ALLOWED_ORIGINS`, `RATE_LIMIT`)
+
+## Security Middleware
+
+HTTP security middleware is configured in `internal/workflow/presenter/rest_api/middleware.go` and wired in `rest_webserver.go`:
+
+- **Request ID** (`gin-contrib/requestid`) — `X-Request-Id` header for tracing
+- **Secure Headers** (`gin-contrib/secure`) — X-Frame-Options, X-Content-Type-Options, XSS filter, CSP, Referrer-Policy
+- **CORS** (`gin-contrib/cors`) — configurable origins via `CORS_ALLOWED_ORIGINS` env var
+- **Rate Limiting** (`ulule/limiter/v3`) — per-IP, configurable via `RATE_LIMIT` env var (default: `100-M`)
 
 ## CI
 
-GitHub Actions (`.github/workflows/ci.yaml`): `gofmt` check -> tests with race detection -> Codecov upload. Triggers on push to `main` and PRs to `main`, `feature/*`, `bugfix/*`.
+GitHub Actions (`.github/workflows/ci.yaml`) with 4 parallel jobs:
+
+- **Lint** — gofmt + go vet + golangci-lint
+- **Test** — tests with race detection + Codecov upload
+- **Security** — govulncheck + gosec
+- **Build** — compile Linux binary
+
+Triggers on push to `main` and PRs to `main`, `feature/*`, `bugfix/*`. Run locally with `make ci`.
 
 ## API
 
