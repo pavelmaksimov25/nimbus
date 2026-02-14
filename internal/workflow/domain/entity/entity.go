@@ -3,6 +3,7 @@ package entity
 import (
 	"database/sql/driver"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -16,10 +17,16 @@ func (j JSONB) Value() (driver.Value, error) {
 }
 
 func (j *JSONB) Scan(value interface{}) error {
-	if err := json.Unmarshal(value.([]byte), &j); err != nil {
-		return err
+	var bytes []byte
+	switch v := value.(type) {
+	case []byte:
+		bytes = v
+	case string:
+		bytes = []byte(v)
+	default:
+		return fmt.Errorf("unsupported type for JSONB: %T", value)
 	}
-	return nil
+	return json.Unmarshal(bytes, j)
 }
 
 type Workflow struct {
@@ -29,9 +36,10 @@ type Workflow struct {
 }
 
 type Task struct {
-	ID         uuid.UUID  `json:"id,omitempty" gorm:"type:uuid;default:uuid_guuid_generate_v4()"`
+	ID         uuid.UUID  `json:"id,omitempty" gorm:"type:uuid;default:uuid_generate_v4()"`
 	Payload    string     `json:"payload" gorm:"type:jsonb"`
 	WorkflowID uuid.UUID  `json:"workflow_id" gorm:"type:uuid"`
+	RunnerID   uuid.UUID  `json:"runner_id" gorm:"type:uuid"`
 	Status     TaskStatus `json:"status" gorm:"type:TaskStatus;default:'NEW'"`
 	CreatedAt  time.Time  `json:"created_at,omitempty" gorm:"autoCreateTime"`
 	FailReason string     `json:"fail_reason,omitempty" gorm:"type:text"`
@@ -47,7 +55,14 @@ const (
 )
 
 func (ts *TaskStatus) Scan(value interface{}) error {
-	*ts = TaskStatus(value.([]byte))
+	switch v := value.(type) {
+	case []byte:
+		*ts = TaskStatus(v)
+	case string:
+		*ts = TaskStatus(v)
+	default:
+		return fmt.Errorf("unsupported type for TaskStatus: %T", value)
+	}
 	return nil
 }
 

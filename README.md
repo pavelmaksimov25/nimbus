@@ -40,9 +40,10 @@ make dev
 | Command | Description |
 |---------|-------------|
 | `make help` | Display all available commands |
-| `make install` | Install dependencies and setup environment |
+| `make install` | Install dependencies, security tools, and linters |
 | `make run` | Run the application locally |
 | `make build` | Build the application binary |
+| `make ci` | Run full CI pipeline locally (lint + test + security + build) |
 | `make migrate` | Run database migrations |
 | `make migrate-create name=<name>` | Create a new migration |
 | `make docker-up` | Start all services with docker-compose |
@@ -50,7 +51,9 @@ make dev
 | `make docker-logs` | View docker-compose logs |
 | `make db-start` | Start only the database |
 | `make db-shell` | Open PostgreSQL shell |
-| `make test` | Run tests |
+| `make test` | Run tests with race detection |
+| `make lint` | Run go vet and golangci-lint |
+| `make security` | Run all security scanners (govulncheck, gosec, staticcheck) |
 | `make docs` | Show documentation information |
 | `make clean` | Clean build artifacts |
 
@@ -166,11 +169,17 @@ The server will start on `http://localhost:8080`
 
 The application uses the [godotenv](https://github.com/joho/godotenv) library to load environment variables from a `.env` file. The following variables are supported:
 
-- `DB_DSN` - PostgreSQL connection string (required)
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `DB_DSN` | Yes | - | PostgreSQL connection string |
+| `CORS_ALLOWED_ORIGINS` | No | `*` | Comma-separated list of allowed CORS origins |
+| `RATE_LIMIT` | No | `100-M` | Rate limit per IP (format: `count-period`, e.g. `100-M` = 100/min) |
 
 **Example `.env` file:**
 ```
 DB_DSN="postgres://nimbus:nimbus_password@localhost:5432/nimbus_db?sslmode=disable&charset=utf8mb4&parseTime=True&loc=Local"
+CORS_ALLOWED_ORIGINS=http://localhost:3000
+RATE_LIMIT=100-M
 ```
 
 ## Architecture
@@ -199,6 +208,7 @@ The project follows **Clean Architecture** principles with clear separation of c
 - Task lifecycle management (NEW → IN_PROGRESS → COMPLETED/FAILED)
 - Thread-safe in-memory storage
 - RESTful API with proper error handling
+- Security middleware (CORS, secure headers, rate limiting, request ID tracing)
 - Extensible architecture for future adapters (queue, database)
 
 ## Docker Support
@@ -213,7 +223,7 @@ The project includes Docker support with multi-stage builds for optimal image si
 
 ## Database Migrations
 
-The project uses [golang-migrate](https://github.com/golang-migrate/migrate) for database schema management. Migrations run automatically when using Docker Compose or Make commands.
+The project uses [goose](https://github.com/pressly/goose) for database schema management. Migrations run automatically when using Docker Compose or Make commands.
 
 **Quick Migration Commands:**
 ```bash
@@ -226,14 +236,52 @@ make migrate-create name=add_user_table
 # Rollback last migration
 make migrate-down
 
-# Check current migration version
-make migrate-version
+# Check migration status
+make migrate-status
 ```
 
 For detailed information on creating and managing migrations, see [Migration Documentation](docs/migration.md).
 
+## Security
+
+The application includes security middleware applied to all routes:
+
+- **Request ID** — `X-Request-Id` header on every response for request tracing
+- **Secure Headers** — `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, XSS filter, `Content-Security-Policy`, `Referrer-Policy`
+- **CORS** — configurable allowed origins via `CORS_ALLOWED_ORIGINS` env var
+- **Rate Limiting** — per-IP rate limiting configurable via `RATE_LIMIT` env var (default: 100 requests/minute)
+- **Body Size Limit** — 1 MB max request body
+
+### Security Scanning
+
+Run security scanners locally:
+
+```bash
+make security                # Run all scanners
+make security-govulncheck    # Check known CVEs in dependencies
+make security-gosec          # Static application security testing
+make security-staticcheck    # Advanced static analysis
+```
+
+Security scanning also runs automatically in CI on every push and pull request.
+
+## CI/CD
+
+GitHub Actions runs 4 parallel jobs on every push to `main` and PRs:
+
+| Job | Tools | Purpose |
+|-----|-------|---------|
+| Lint | gofmt, go vet, golangci-lint | Code quality and formatting |
+| Test | go test -race, Codecov | Correctness and coverage |
+| Security | govulncheck, gosec | Vulnerability and SAST scanning |
+| Build | go build | Binary compilation check |
+
+Run the full pipeline locally with `make ci`.
+
 ## Todo
-- [ ] Implement persistent storage (database)
+- [x] Implement persistent storage (database)
+- [x] Add security middleware (CORS, secure headers, rate limiting)
+- [x] Add security scanning to CI pipeline
 - [ ] Add workflow orchestration capabilities
 - [ ] Implement task queue system
 - [ ] Add authentication and authorization

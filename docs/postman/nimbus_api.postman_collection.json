@@ -1,0 +1,1978 @@
+{
+	"info": {
+		"name": "Nimbus Workflow API",
+		"description": "API collection for Nimbus distributed workflow engine",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080/api/v1"
+		},
+		{
+			"key": "workflow_id",
+			"value": ""
+		},
+		{
+			"key": "task_id",
+			"value": ""
+		},
+		{
+			"key": "runner_id",
+			"value": ""
+		}
+	],
+	"item": [
+		{
+			"name": "Workflows",
+			"item": [
+				{
+					"name": "Create Workflow",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Response has workflow data', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.data).to.have.property('id');",
+									"    pm.expect(json.data).to.have.property('name');",
+									"    pm.expect(json.data).to.have.property('created_at');",
+									"    pm.collectionVariables.set('workflow_id', json.data.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"My Workflow\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/workflows",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"workflows"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Tasks",
+			"item": [
+				{
+					"name": "Create Task",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Response has task data with NEW status and runner_id', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.data).to.have.property('id');",
+									"    pm.expect(json.data).to.have.property('payload');",
+									"    pm.expect(json.data).to.have.property('workflow_id');",
+									"    pm.expect(json.data).to.have.property('runner_id');",
+									"    pm.expect(json.data.status).to.eql('NEW');",
+									"    pm.collectionVariables.set('task_id', json.data.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"payload\": \"{\\\"action\\\": \\\"process_data\\\", \\\"data\\\": {\\\"key\\\": \\\"value\\\"}}\",\n    \"workflow_id\": \"{{workflow_id}}\",\n    \"runner_id\": \"{{runner_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/tasks",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tasks"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get All Tasks",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/tasks",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tasks"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has data array', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.data).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Task by ID",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/tasks/{{task_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tasks",
+								"{{task_id}}"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has correct task with runner_id', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.data).to.have.property('id');",
+									"    pm.expect(json.data.id).to.eql(pm.collectionVariables.get('task_id'));",
+									"    pm.expect(json.data).to.have.property('runner_id');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Start Task",
+					"request": {
+						"method": "POST",
+						"url": {
+							"raw": "{{base_url}}/tasks/{{task_id}}/start",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tasks",
+								"{{task_id}}",
+								"start"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has success message', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.message).to.eql('Task started');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Complete Task",
+					"request": {
+						"method": "POST",
+						"url": {
+							"raw": "{{base_url}}/tasks/{{task_id}}/complete",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tasks",
+								"{{task_id}}",
+								"complete"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has success message', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.message).to.eql('Task completed');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Fail Task",
+					"request": {
+						"method": "POST",
+						"url": {
+							"raw": "{{base_url}}/tasks/{{task_id}}/fail",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tasks",
+								"{{task_id}}",
+								"fail"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has success message', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.message).to.eql('Task marked as failed');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Runners for Task",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/tasks/{{task_id}}/runners",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tasks",
+								"{{task_id}}",
+								"runners"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has data array', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.data).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Task Runners",
+			"item": [
+				{
+					"name": "Create Task Runner",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Response has runner data', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.data).to.have.property('id');",
+									"    pm.expect(json.data).to.have.property('name');",
+									"    pm.expect(json.data).to.have.property('type');",
+									"    pm.expect(json.data).to.have.property('config');",
+									"    pm.collectionVariables.set('runner_id', json.data.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"SQS Runner\",\n    \"type\": \"aws_sqs\",\n    \"config\": {\n        \"queue_url\": \"http://localhost:9324/000000000000/nimbus-tasks\",\n        \"region\": \"us-east-1\",\n        \"access_key\": \"test\",\n        \"secret_key\": \"test\",\n        \"endpoint\": \"http://localhost:9324\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/task-runners",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"task-runners"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get All Task Runners",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/task-runners",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"task-runners"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has data array', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.data).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Task Runner by ID",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/task-runners/{{runner_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"task-runners",
+								"{{runner_id}}"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has correct runner', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.data).to.have.property('id');",
+									"    pm.expect(json.data.id).to.eql(pm.collectionVariables.get('runner_id'));",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Assign Runner to Task",
+					"request": {
+						"method": "POST",
+						"url": {
+							"raw": "{{base_url}}/task-runners/{{runner_id}}/assign/{{task_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"task-runners",
+								"{{runner_id}}",
+								"assign",
+								"{{task_id}}"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has success message', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.message).to.be.a('string');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Unassign Runner from Task",
+					"request": {
+						"method": "DELETE",
+						"url": {
+							"raw": "{{base_url}}/task-runners/{{runner_id}}/assign/{{task_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"task-runners",
+								"{{runner_id}}",
+								"assign",
+								"{{task_id}}"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has success message', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.message).to.be.a('string');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "E2E: Create Runner -> Task -> Start",
+			"item": [
+				{
+					"name": "1. Create Workflow",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Workflow created and ID saved', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.data).to.have.property('id');",
+									"    pm.expect(json.data).to.have.property('name', 'E2E Test Workflow');",
+									"    pm.collectionVariables.set('workflow_id', json.data.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"E2E Test Workflow\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/workflows",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"workflows"
+							]
+						}
+					}
+				},
+				{
+					"name": "2. Create Task Runner",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Runner created and ID saved', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.data).to.have.property('id');",
+									"    pm.expect(json.data.type).to.eql('aws_sqs');",
+									"    pm.collectionVariables.set('runner_id', json.data.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"SQS Runner\",\n    \"type\": \"aws_sqs\",\n    \"config\": {\n        \"queue_url\": \"http://localhost:9324/000000000000/nimbus-tasks\",\n        \"region\": \"us-east-1\",\n        \"access_key\": \"test\",\n        \"secret_key\": \"test\",\n        \"endpoint\": \"http://localhost:9324\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/task-runners",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"task-runners"
+							]
+						}
+					}
+				},
+				{
+					"name": "3. Create Task",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Task created with NEW status, runner_id, and ID saved', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.data).to.have.property('id');",
+									"    pm.expect(json.data.status).to.eql('NEW');",
+									"    pm.expect(json.data).to.have.property('runner_id');",
+									"    pm.expect(json.data.runner_id).to.eql(pm.collectionVariables.get('runner_id'));",
+									"    pm.collectionVariables.set('task_id', json.data.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"payload\": \"{\\\"action\\\": \\\"process_data\\\", \\\"key\\\": \\\"value\\\"}\",\n    \"workflow_id\": \"{{workflow_id}}\",\n    \"runner_id\": \"{{runner_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/tasks",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tasks"
+							]
+						}
+					}
+				},
+				{
+					"name": "4. Start Task (dispatches to SQS)",
+					"request": {
+						"method": "POST",
+						"url": {
+							"raw": "{{base_url}}/tasks/{{task_id}}/start",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tasks",
+								"{{task_id}}",
+								"start"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Task started successfully', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.message).to.eql('Task started');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "5. Verify Runners for Task",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/tasks/{{task_id}}/runners",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tasks",
+								"{{task_id}}",
+								"runners"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Task has assigned runner', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.data).to.be.an('array');",
+									"    pm.expect(json.data.length).to.be.above(0);",
+									"    pm.expect(json.data[0].id).to.eql(pm.collectionVariables.get('runner_id'));",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "API Tests",
+			"item": [
+				{
+					"name": "Workflow Validation",
+					"item": [
+						{
+							"name": "Create Workflow - Missing name",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Status code is 400 for missing name', function () {",
+											"    pm.response.to.have.status(400);",
+											"});",
+											"",
+											"pm.test('Response has error message', function () {",
+											"    var json = pm.response.json();",
+											"    pm.expect(json).to.have.property('message');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{}"
+								},
+								"url": {
+									"raw": "{{base_url}}/workflows",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"workflows"
+									]
+								}
+							}
+						},
+						{
+							"name": "Create Workflow - Empty name",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Status code is 400 for empty name', function () {",
+											"    pm.response.to.have.status(400);",
+											"});",
+											"",
+											"pm.test('Response has error message', function () {",
+											"    var json = pm.response.json();",
+											"    pm.expect(json).to.have.property('message');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"name\": \"\"}"
+								},
+								"url": {
+									"raw": "{{base_url}}/workflows",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"workflows"
+									]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Task Runner Validation",
+					"item": [
+						{
+							"name": "Create Runner - Missing fields",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Status code is 400 for missing fields', function () {",
+											"    pm.response.to.have.status(400);",
+											"});",
+											"",
+											"pm.test('Response has error message', function () {",
+											"    var json = pm.response.json();",
+											"    pm.expect(json).to.have.property('message');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{}"
+								},
+								"url": {
+									"raw": "{{base_url}}/task-runners",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"task-runners"
+									]
+								}
+							}
+						},
+						{
+							"name": "Create Runner - Invalid type",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Status code is 422 for invalid type', function () {",
+											"    pm.response.to.have.status(422);",
+											"});",
+											"",
+											"pm.test('Response has error message', function () {",
+											"    var json = pm.response.json();",
+											"    pm.expect(json).to.have.property('message');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"name\": \"Bad Runner\", \"type\": \"invalid_type\", \"config\": {}}"
+								},
+								"url": {
+									"raw": "{{base_url}}/task-runners",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"task-runners"
+									]
+								}
+							}
+						},
+						{
+							"name": "Get Runner - Not found",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Status code is 404 for non-existent runner', function () {",
+											"    pm.response.to.have.status(404);",
+											"});",
+											"",
+											"pm.test('Response has error message', function () {",
+											"    var json = pm.response.json();",
+											"    pm.expect(json).to.have.property('message');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/task-runners/00000000-0000-0000-0000-000000000000",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"task-runners",
+										"00000000-0000-0000-0000-000000000000"
+									]
+								}
+							}
+						},
+						{
+							"name": "Get Runner - Invalid UUID",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Status code is 400 for invalid UUID', function () {",
+											"    pm.response.to.have.status(400);",
+											"});",
+											"",
+											"pm.test('Response has error message', function () {",
+											"    var json = pm.response.json();",
+											"    pm.expect(json).to.have.property('message');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/task-runners/not-a-uuid",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"task-runners",
+										"not-a-uuid"
+									]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Task Validation",
+					"item": [
+						{
+							"name": "Create Task - Missing fields",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Status code is 400 for missing fields', function () {",
+											"    pm.response.to.have.status(400);",
+											"});",
+											"",
+											"pm.test('Response has error message', function () {",
+											"    var json = pm.response.json();",
+											"    pm.expect(json).to.have.property('message');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{}"
+								},
+								"url": {
+									"raw": "{{base_url}}/tasks",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tasks"
+									]
+								}
+							}
+						},
+						{
+							"name": "Create Task - Missing runner_id",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Status code is 400 for missing runner_id', function () {",
+											"    pm.response.to.have.status(400);",
+											"});",
+											"",
+											"pm.test('Response has error message', function () {",
+											"    var json = pm.response.json();",
+											"    pm.expect(json).to.have.property('message');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"payload\": \"test\", \"workflow_id\": \"{{workflow_id}}\"}"
+								},
+								"url": {
+									"raw": "{{base_url}}/tasks",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tasks"
+									]
+								}
+							}
+						},
+						{
+							"name": "Create Task - Non-existent runner",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Status code is 404 for non-existent runner', function () {",
+											"    pm.response.to.have.status(404);",
+											"});",
+											"",
+											"pm.test('Response has error message', function () {",
+											"    var json = pm.response.json();",
+											"    pm.expect(json).to.have.property('message');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"payload\": \"test\", \"workflow_id\": \"{{workflow_id}}\", \"runner_id\": \"00000000-0000-0000-0000-000000000000\"}"
+								},
+								"url": {
+									"raw": "{{base_url}}/tasks",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tasks"
+									]
+								}
+							}
+						},
+						{
+							"name": "Get Task - Not found",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Status code is 404 for non-existent task', function () {",
+											"    pm.response.to.have.status(404);",
+											"});",
+											"",
+											"pm.test('Response has error message', function () {",
+											"    var json = pm.response.json();",
+											"    pm.expect(json).to.have.property('message');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/tasks/00000000-0000-0000-0000-000000000000",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tasks",
+										"00000000-0000-0000-0000-000000000000"
+									]
+								}
+							}
+						},
+						{
+							"name": "Get Task - Invalid UUID",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Status code is 400 for invalid UUID', function () {",
+											"    pm.response.to.have.status(400);",
+											"});",
+											"",
+											"pm.test('Response has error message', function () {",
+											"    var json = pm.response.json();",
+											"    pm.expect(json).to.have.property('message');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/tasks/not-a-uuid",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tasks",
+										"not-a-uuid"
+									]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Task State - Not Found",
+					"item": [
+						{
+							"name": "Start Task - Not found",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Status code is 404', function () {",
+											"    pm.response.to.have.status(404);",
+											"});",
+											"",
+											"pm.test('Response has error message', function () {",
+											"    var json = pm.response.json();",
+											"    pm.expect(json).to.have.property('message');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"url": {
+									"raw": "{{base_url}}/tasks/00000000-0000-0000-0000-000000000000/start",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tasks",
+										"00000000-0000-0000-0000-000000000000",
+										"start"
+									]
+								}
+							}
+						},
+						{
+							"name": "Complete Task - Not found",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Status code is 404', function () {",
+											"    pm.response.to.have.status(404);",
+											"});",
+											"",
+											"pm.test('Response has error message', function () {",
+											"    var json = pm.response.json();",
+											"    pm.expect(json).to.have.property('message');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"url": {
+									"raw": "{{base_url}}/tasks/00000000-0000-0000-0000-000000000000/complete",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tasks",
+										"00000000-0000-0000-0000-000000000000",
+										"complete"
+									]
+								}
+							}
+						},
+						{
+							"name": "Fail Task - Not found",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Status code is 404', function () {",
+											"    pm.response.to.have.status(404);",
+											"});",
+											"",
+											"pm.test('Response has error message', function () {",
+											"    var json = pm.response.json();",
+											"    pm.expect(json).to.have.property('message');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"url": {
+									"raw": "{{base_url}}/tasks/00000000-0000-0000-0000-000000000000/fail",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tasks",
+										"00000000-0000-0000-0000-000000000000",
+										"fail"
+									]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Task State - Invalid Transitions",
+					"item": [
+						{
+							"name": "Setup: Create Workflow",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Setup: workflow created', function () {",
+											"    pm.response.to.have.status(201);",
+											"    var json = pm.response.json();",
+											"    pm.collectionVariables.set('workflow_id', json.data.id);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"name\": \"State Test Workflow\"}"
+								},
+								"url": {
+									"raw": "{{base_url}}/workflows",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"workflows"
+									]
+								}
+							}
+						},
+						{
+							"name": "Setup: Create Echo Runner",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Setup: runner created', function () {",
+											"    pm.response.to.have.status(201);",
+											"    var json = pm.response.json();",
+											"    pm.collectionVariables.set('runner_id', json.data.id);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"name\": \"Echo Runner\", \"type\": \"echo\", \"config\": {}}"
+								},
+								"url": {
+									"raw": "{{base_url}}/task-runners",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"task-runners"
+									]
+								}
+							}
+						},
+						{
+							"name": "Setup: Create Task",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Setup: task created', function () {",
+											"    pm.response.to.have.status(201);",
+											"    var json = pm.response.json();",
+											"    pm.expect(json.data.status).to.eql('NEW');",
+											"    pm.collectionVariables.set('task_id', json.data.id);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"payload\": \"state test\", \"workflow_id\": \"{{workflow_id}}\", \"runner_id\": \"{{runner_id}}\"}"
+								},
+								"url": {
+									"raw": "{{base_url}}/tasks",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tasks"
+									]
+								}
+							}
+						},
+						{
+							"name": "Complete NEW task - 422",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Status code is 422 - cannot complete NEW task', function () {",
+											"    pm.response.to.have.status(422);",
+											"});",
+											"",
+											"pm.test('Response has error message', function () {",
+											"    var json = pm.response.json();",
+											"    pm.expect(json).to.have.property('message');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"url": {
+									"raw": "{{base_url}}/tasks/{{task_id}}/complete",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tasks",
+										"{{task_id}}",
+										"complete"
+									]
+								}
+							}
+						},
+						{
+							"name": "Fail NEW task - 422",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Status code is 422 - cannot fail NEW task', function () {",
+											"    pm.response.to.have.status(422);",
+											"});",
+											"",
+											"pm.test('Response has error message', function () {",
+											"    var json = pm.response.json();",
+											"    pm.expect(json).to.have.property('message');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"url": {
+									"raw": "{{base_url}}/tasks/{{task_id}}/fail",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tasks",
+										"{{task_id}}",
+										"fail"
+									]
+								}
+							}
+						},
+						{
+							"name": "Start task - 200",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Status code is 200 - task started', function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test('Response confirms start', function () {",
+											"    var json = pm.response.json();",
+											"    pm.expect(json.message).to.eql('Task started');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"url": {
+									"raw": "{{base_url}}/tasks/{{task_id}}/start",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tasks",
+										"{{task_id}}",
+										"start"
+									]
+								}
+							}
+						},
+						{
+							"name": "Start IN_PROGRESS task - 422",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Status code is 422 - cannot start IN_PROGRESS task', function () {",
+											"    pm.response.to.have.status(422);",
+											"});",
+											"",
+											"pm.test('Response has error message', function () {",
+											"    var json = pm.response.json();",
+											"    pm.expect(json).to.have.property('message');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"url": {
+									"raw": "{{base_url}}/tasks/{{task_id}}/start",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tasks",
+										"{{task_id}}",
+										"start"
+									]
+								}
+							}
+						},
+						{
+							"name": "Verify task is IN_PROGRESS",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Task is IN_PROGRESS', function () {",
+											"    pm.response.to.have.status(200);",
+											"    var json = pm.response.json();",
+											"    pm.expect(json.data.status).to.eql('IN_PROGRESS');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/tasks/{{task_id}}",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tasks",
+										"{{task_id}}"
+									]
+								}
+							}
+						},
+						{
+							"name": "Complete task - 200",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Status code is 200 - task completed', function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test('Response confirms completion', function () {",
+											"    var json = pm.response.json();",
+											"    pm.expect(json.message).to.eql('Task completed');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"url": {
+									"raw": "{{base_url}}/tasks/{{task_id}}/complete",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tasks",
+										"{{task_id}}",
+										"complete"
+									]
+								}
+							}
+						},
+						{
+							"name": "Start COMPLETED task - 422",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Status code is 422 - cannot start COMPLETED task', function () {",
+											"    pm.response.to.have.status(422);",
+											"});",
+											"",
+											"pm.test('Response has error message', function () {",
+											"    var json = pm.response.json();",
+											"    pm.expect(json).to.have.property('message');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"url": {
+									"raw": "{{base_url}}/tasks/{{task_id}}/start",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tasks",
+										"{{task_id}}",
+										"start"
+									]
+								}
+							}
+						},
+						{
+							"name": "Fail COMPLETED task - 422",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Status code is 422 - cannot fail COMPLETED task', function () {",
+											"    pm.response.to.have.status(422);",
+											"});",
+											"",
+											"pm.test('Response has error message', function () {",
+											"    var json = pm.response.json();",
+											"    pm.expect(json).to.have.property('message');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"url": {
+									"raw": "{{base_url}}/tasks/{{task_id}}/fail",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tasks",
+										"{{task_id}}",
+										"fail"
+									]
+								}
+							}
+						},
+						{
+							"name": "Verify task is COMPLETED",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Task is COMPLETED', function () {",
+											"    pm.response.to.have.status(200);",
+											"    var json = pm.response.json();",
+											"    pm.expect(json.data.status).to.eql('COMPLETED');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/tasks/{{task_id}}",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tasks",
+										"{{task_id}}"
+									]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Task State - Fail Path",
+					"item": [
+						{
+							"name": "Setup: Create Task",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Setup: task created', function () {",
+											"    pm.response.to.have.status(201);",
+											"    var json = pm.response.json();",
+											"    pm.collectionVariables.set('task_id', json.data.id);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"payload\": \"fail path test\", \"workflow_id\": \"{{workflow_id}}\", \"runner_id\": \"{{runner_id}}\"}"
+								},
+								"url": {
+									"raw": "{{base_url}}/tasks",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tasks"
+									]
+								}
+							}
+						},
+						{
+							"name": "Start task",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Task started', function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"url": {
+									"raw": "{{base_url}}/tasks/{{task_id}}/start",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tasks",
+										"{{task_id}}",
+										"start"
+									]
+								}
+							}
+						},
+						{
+							"name": "Fail task - 200",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Status code is 200 - task failed', function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test('Response confirms failure', function () {",
+											"    var json = pm.response.json();",
+											"    pm.expect(json.message).to.eql('Task marked as failed');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"url": {
+									"raw": "{{base_url}}/tasks/{{task_id}}/fail",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tasks",
+										"{{task_id}}",
+										"fail"
+									]
+								}
+							}
+						},
+						{
+							"name": "Start FAILED task - 422",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Status code is 422 - cannot start FAILED task', function () {",
+											"    pm.response.to.have.status(422);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"url": {
+									"raw": "{{base_url}}/tasks/{{task_id}}/start",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tasks",
+										"{{task_id}}",
+										"start"
+									]
+								}
+							}
+						},
+						{
+							"name": "Complete FAILED task - 422",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Status code is 422 - cannot complete FAILED task', function () {",
+											"    pm.response.to.have.status(422);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"url": {
+									"raw": "{{base_url}}/tasks/{{task_id}}/complete",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tasks",
+										"{{task_id}}",
+										"complete"
+									]
+								}
+							}
+						},
+						{
+							"name": "Fail FAILED task - 422",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Status code is 422 - cannot fail FAILED task', function () {",
+											"    pm.response.to.have.status(422);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"url": {
+									"raw": "{{base_url}}/tasks/{{task_id}}/fail",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tasks",
+										"{{task_id}}",
+										"fail"
+									]
+								}
+							}
+						},
+						{
+							"name": "Verify task is FAILED",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Task is FAILED with reason', function () {",
+											"    pm.response.to.have.status(200);",
+											"    var json = pm.response.json();",
+											"    pm.expect(json.data.status).to.eql('FAILED');",
+											"    pm.expect(json.data.fail_reason).to.be.a('string').and.not.empty;",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/tasks/{{task_id}}",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"tasks",
+										"{{task_id}}"
+									]
+								}
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}

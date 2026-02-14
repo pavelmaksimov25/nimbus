@@ -1,10 +1,14 @@
 package task
 
 import (
+	"errors"
 	"testing"
+	"time"
 
+	trMocks "nimbus/internal/task_runnner/application/mocks"
+	trEntity "nimbus/internal/task_runnner/domain/entity"
+	"nimbus/internal/workflow/adapters/mocks"
 	"nimbus/internal/workflow/domain/entity"
-	"nimbus/internal/workflow/domain/repository/mocks"
 	"nimbus/internal/workflow/domain/types"
 
 	"github.com/google/uuid"
@@ -18,12 +22,18 @@ func TestTaskService_CreateTask(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockTaskRepository(ctrl)
-	taskService := NewTaskService(mockRepo)
+	mockRunnerSvc := trMocks.NewMockTaskRunnerService(ctrl)
+	taskService := NewTaskService(mockRepo, nil, mockRunnerSvc)
 
+	runnerID := uuid.New()
 	inputTask := &entity.Task{
 		Payload:    "Test Payload",
 		WorkflowID: uuid.New(),
 	}
+
+	mockRunnerSvc.EXPECT().
+		GetRunner(runnerID).
+		Return(&trEntity.TaskRunner{ID: runnerID, Name: "Echo Runner", Type: trEntity.Echo}, nil)
 
 	mockRepo.EXPECT().
 		StoreTask(gomock.Any()).
@@ -31,14 +41,47 @@ func TestTaskService_CreateTask(t *testing.T) {
 			return task, nil
 		})
 
+	mockRunnerSvc.EXPECT().
+		AssignTask(runnerID, gomock.Any()).
+		Return(nil)
+
 	// Act
-	resultTask, err := taskService.CreateTask(inputTask)
+	resultTask, err := taskService.CreateTask(inputTask, runnerID)
 
 	// Assert
 	assert.NoError(t, err)
 	assert.IsType(t, uuid.UUID{}, resultTask.ID)
 	assert.Equal(t, "Test Payload", resultTask.Payload)
 	assert.Equal(t, entity.StatusNew, resultTask.Status)
+	assert.Equal(t, runnerID, resultTask.RunnerID)
+}
+
+func TestTaskService_CreateTask_RunnerNotFound(t *testing.T) {
+	// Arrange
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := mocks.NewMockTaskRepository(ctrl)
+	mockRunnerSvc := trMocks.NewMockTaskRunnerService(ctrl)
+	taskService := NewTaskService(mockRepo, nil, mockRunnerSvc)
+
+	runnerID := uuid.New()
+	inputTask := &entity.Task{
+		Payload:    "Test Payload",
+		WorkflowID: uuid.New(),
+	}
+
+	mockRunnerSvc.EXPECT().
+		GetRunner(runnerID).
+		Return(nil, &types.RecordNotFoundError{Resource: "TaskRunner", ID: runnerID.String()})
+
+	// Act
+	resultTask, err := taskService.CreateTask(inputTask, runnerID)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, resultTask)
+	assert.IsType(t, &types.RecordNotFoundError{}, err)
 }
 
 func TestTaskService_GetTasks(t *testing.T) {
@@ -47,7 +90,7 @@ func TestTaskService_GetTasks(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockTaskRepository(ctrl)
-	taskService := NewTaskService(mockRepo)
+	taskService := NewTaskService(mockRepo, nil, nil)
 
 	expectedTask := entity.Task{
 		ID:         uuid.New(),
@@ -76,7 +119,7 @@ func TestTaskService_GetTask(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockTaskRepository(ctrl)
-	taskService := NewTaskService(mockRepo)
+	taskService := NewTaskService(mockRepo, nil, nil)
 
 	expectedTask := &entity.Task{
 		ID:         uuid.New(),
@@ -105,7 +148,7 @@ func TestTaskService_GetTask_NotFound(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockTaskRepository(ctrl)
-	taskService := NewTaskService(mockRepo)
+	taskService := NewTaskService(mockRepo, nil, nil)
 	nonExistentID := uuid.New()
 
 	mockRepo.EXPECT().
@@ -126,7 +169,7 @@ func TestTaskService_StartTask(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockTaskRepository(ctrl)
-	taskService := NewTaskService(mockRepo)
+	taskService := NewTaskService(mockRepo, nil, nil)
 
 	existingTask := &entity.Task{
 		ID:         uuid.New(),
@@ -140,7 +183,7 @@ func TestTaskService_StartTask(t *testing.T) {
 		Return(existingTask)
 
 	mockRepo.EXPECT().
-		UpdateTask(gomock.Any()).
+		UpdateTaskStatus(existingTask.ID, entity.StatusNew, entity.StatusInProgress).
 		Return(nil)
 
 	// Act
@@ -180,12 +223,16 @@ func TestTaskService_StartTask_InvalidTaskStatus(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockRepo := mocks.NewMockTaskRepository(ctrl)
-			taskService := NewTaskService(mockRepo)
+			taskService := NewTaskService(mockRepo, nil, nil)
 
 			taskCopy := existingTask
 			mockRepo.EXPECT().
 				GetTask(existingTask.ID).
 				Return(&taskCopy)
+
+			mockRepo.EXPECT().
+				UpdateTaskStatus(existingTask.ID, entity.StatusNew, entity.StatusInProgress).
+				Return(errors.New("task is not in status NEW"))
 
 			// Act
 			err := taskService.StartTask(existingTask.ID)
@@ -202,7 +249,7 @@ func TestTaskService_StartTask_NotFound(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockTaskRepository(ctrl)
-	taskService := NewTaskService(mockRepo)
+	taskService := NewTaskService(mockRepo, nil, nil)
 	nonExistentID := uuid.New()
 
 	mockRepo.EXPECT().
@@ -222,31 +269,45 @@ func TestTaskService_CompleteTask(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockTaskRepository(ctrl)
-	taskService := NewTaskService(mockRepo)
+	taskService := NewTaskService(mockRepo, nil, nil)
 
+	taskID := uuid.New()
 	inProgressTask := &entity.Task{
-		ID:         uuid.New(),
+		ID:         taskID,
 		Payload:    "Test Payload",
 		Status:     entity.StatusInProgress,
 		WorkflowID: uuid.New(),
 	}
 
-	// First call for CompleteTask
+	// First GetTask call for existence check
 	mockRepo.EXPECT().
-		GetTask(inProgressTask.ID).
-		Return(inProgressTask).
-		Times(1)
+		GetTask(taskID).
+		Return(inProgressTask)
+
+	mockRepo.EXPECT().
+		UpdateTaskStatus(taskID, entity.StatusInProgress, entity.StatusCompleted).
+		Return(nil)
+
+	// Second GetTask call for payload update
+	completedTask := &entity.Task{
+		ID:         taskID,
+		Payload:    "Test Payload",
+		Status:     entity.StatusCompleted,
+		WorkflowID: inProgressTask.WorkflowID,
+	}
+	mockRepo.EXPECT().
+		GetTask(taskID).
+		Return(completedTask)
 
 	mockRepo.EXPECT().
 		UpdateTask(gomock.Any()).
 		DoAndReturn(func(task *entity.Task) error {
-			assert.Equal(t, entity.StatusCompleted, task.Status)
 			assert.Equal(t, "Test Payload - Additional Payload", task.Payload)
 			return nil
 		})
 
 	// Act
-	err := taskService.CompleteTask(inProgressTask.ID, " - Additional Payload")
+	err := taskService.CompleteTask(taskID, " - Additional Payload")
 
 	// Assert
 	assert.Nil(t, err)
@@ -282,12 +343,16 @@ func TestTaskService_CompleteTask_InvalidTaskStatus(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockRepo := mocks.NewMockTaskRepository(ctrl)
-			taskService := NewTaskService(mockRepo)
+			taskService := NewTaskService(mockRepo, nil, nil)
 
 			taskCopy := existingTask
 			mockRepo.EXPECT().
 				GetTask(existingTask.ID).
 				Return(&taskCopy)
+
+			mockRepo.EXPECT().
+				UpdateTaskStatus(existingTask.ID, entity.StatusInProgress, entity.StatusCompleted).
+				Return(errors.New("task is not in status IN_PROGRESS"))
 
 			// Act
 			err := taskService.CompleteTask(existingTask.ID, "")
@@ -304,7 +369,7 @@ func TestTaskService_CompleteTask_NotFound(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockTaskRepository(ctrl)
-	taskService := NewTaskService(mockRepo)
+	taskService := NewTaskService(mockRepo, nil, nil)
 	nonExistentID := uuid.New()
 
 	mockRepo.EXPECT().
@@ -324,28 +389,41 @@ func TestTaskService_FailTask(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockTaskRepository(ctrl)
-	taskService := NewTaskService(mockRepo)
+	taskService := NewTaskService(mockRepo, nil, nil)
 
+	taskID := uuid.New()
 	inProgressTask := &entity.Task{
-		ID:      uuid.New(),
+		ID:      taskID,
 		Payload: "Test Payload",
 		Status:  entity.StatusInProgress,
 	}
 
 	mockRepo.EXPECT().
-		GetTask(inProgressTask.ID).
+		GetTask(taskID).
 		Return(inProgressTask)
+
+	mockRepo.EXPECT().
+		UpdateTaskStatus(taskID, entity.StatusInProgress, entity.StatusFailed).
+		Return(nil)
+
+	failedTask := &entity.Task{
+		ID:      taskID,
+		Payload: "Test Payload",
+		Status:  entity.StatusFailed,
+	}
+	mockRepo.EXPECT().
+		GetTask(taskID).
+		Return(failedTask)
 
 	mockRepo.EXPECT().
 		UpdateTask(gomock.Any()).
 		DoAndReturn(func(task *entity.Task) error {
-			assert.Equal(t, entity.StatusFailed, task.Status)
 			assert.Equal(t, "Some failure reason", task.FailReason)
 			return nil
 		})
 
 	// Act
-	err := taskService.FailTask(inProgressTask.ID, "Some failure reason")
+	err := taskService.FailTask(taskID, "Some failure reason")
 
 	// Assert
 	assert.Nil(t, err)
@@ -357,7 +435,7 @@ func TestTaskService_FailTask_NotFound(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockTaskRepository(ctrl)
-	taskService := NewTaskService(mockRepo)
+	taskService := NewTaskService(mockRepo, nil, nil)
 	nonExistentID := uuid.New()
 
 	mockRepo.EXPECT().
@@ -398,12 +476,16 @@ func TestTaskService_FailTask_InvalidTaskStatus(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockRepo := mocks.NewMockTaskRepository(ctrl)
-			taskService := NewTaskService(mockRepo)
+			taskService := NewTaskService(mockRepo, nil, nil)
 
 			taskCopy := existingTask
 			mockRepo.EXPECT().
 				GetTask(existingTask.ID).
 				Return(&taskCopy)
+
+			mockRepo.EXPECT().
+				UpdateTaskStatus(existingTask.ID, entity.StatusInProgress, entity.StatusFailed).
+				Return(errors.New("task is not in status IN_PROGRESS"))
 
 			// Act
 			err := taskService.FailTask(existingTask.ID, "Some failure reason")
@@ -412,4 +494,42 @@ func TestTaskService_FailTask_InvalidTaskStatus(t *testing.T) {
 			assert.IsType(t, &types.UnprocessableEntityError{}, err)
 		})
 	}
+}
+
+func TestTaskService_StartTask_DispatcheToRunners(t *testing.T) {
+	// Arrange
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := mocks.NewMockTaskRepository(ctrl)
+	mockDispatch := trMocks.NewMockDispatchService(ctrl)
+	taskService := NewTaskService(mockRepo, mockDispatch, nil)
+
+	existingTask := &entity.Task{
+		ID:         uuid.New(),
+		Payload:    "Test Payload",
+		Status:     entity.StatusNew,
+		WorkflowID: uuid.New(),
+	}
+
+	mockRepo.EXPECT().
+		GetTask(existingTask.ID).
+		Return(existingTask)
+
+	mockRepo.EXPECT().
+		UpdateTaskStatus(existingTask.ID, entity.StatusNew, entity.StatusInProgress).
+		Return(nil)
+
+	mockDispatch.EXPECT().
+		DispatchTask(gomock.Any(), existingTask.ID, existingTask.Payload).
+		Return(nil)
+
+	// Act
+	err := taskService.StartTask(existingTask.ID)
+
+	// Assert
+	assert.Nil(t, err)
+
+	// Wait for the goroutine to complete
+	time.Sleep(50 * time.Millisecond)
 }

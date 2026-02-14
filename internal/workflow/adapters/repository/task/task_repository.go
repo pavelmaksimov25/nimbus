@@ -1,6 +1,8 @@
 package task
 
 import (
+	"fmt"
+
 	entity "nimbus/internal/workflow/domain/entity"
 	"nimbus/internal/workflow/domain/repository"
 
@@ -40,4 +42,17 @@ func (t *taskRepository) GetTask(id uuid.UUID) *entity.Task {
 
 func (t *taskRepository) UpdateTask(task *entity.Task) error {
 	return t.conn.Save(task).Error
+}
+
+func (t *taskRepository) UpdateTaskStatus(id uuid.UUID, fromStatus, toStatus entity.TaskStatus) error {
+	result := t.conn.Model(&entity.Task{}).
+		Where("id = ? AND status = ?", id, fromStatus).
+		Update("status", toStatus)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("task %s is not in status %s", id, fromStatus)
+	}
+	return nil
 }

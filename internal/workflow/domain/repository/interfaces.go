@@ -11,6 +11,7 @@ type TaskRepository interface {
 	GetTasks() []entity.Task
 	GetTask(id uuid.UUID) *entity.Task
 	UpdateTask(task *entity.Task) error
+	UpdateTaskStatus(id uuid.UUID, fromStatus, toStatus entity.TaskStatus) error
 }
 
 type WorkflowRepository interface {

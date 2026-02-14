@@ -16,18 +16,28 @@ services:
     networks:
       - nimbus-network
 
+  elasticmq:
+    image: softwaremill/elasticmq
+    container_name: nimbus-elasticmq
+    ports:
+      - "9324:9324"
+      - "9325:9325"
+    volumes:
+      - ./config/elasticmq.conf:/opt/elasticmq.conf
+    networks:
+      - nimbus-network
+
   migration:
-    image: migrate/migrate
+    image: golang:1.24-alpine
     container_name: nimbus-migration
     volumes:
-      - ./migrations:/migrations 
+      - ./migrations:/migrations
     env_file:
       - .env
     command: >
       /bin/sh -c '
-      echo "Waiting a few seconds for the DB to be fully available..." &&
-      sleep 5 &&
-      migrate -path /migrations -database "$DB_DSN" up
+      go install github.com/pressly/goose/v3/cmd/goose@latest &&
+      goose -dir /migrations postgres "$DB_DSN" up
       '
     depends_on:
       database:

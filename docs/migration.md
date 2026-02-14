@@ -1,122 +1,97 @@
 # Database Migrations
 
-This document describes how to work with database migrations in the Nimbus project using the [golang-migrate](https://github.com/golang-migrate/migrate) tool.
+This document describes how to work with database migrations in the Nimbus project using [goose](https://github.com/pressly/goose).
 
 ## Overview
 
-Nimbus uses [golang-migrate/migrate](https://github.com/golang-migrate/migrate/blob/v4.19.0/cmd/migrate/README.md) for managing database schema migrations. This tool provides a simple and reliable way to version and apply database changes.
+Nimbus uses [pressly/goose](https://github.com/pressly/goose) for managing database schema migrations. Goose provides a simple CLI for versioning and applying database changes using annotated SQL files.
 
 ## Installation
 
 ### Option 1: Using Docker (Recommended)
 
-The project already includes the migrate tool in `docker-compose.yml`. No additional installation is required when using Docker Compose.
+The project already includes goose in `docker-compose.yml`. No additional installation is required when using Docker Compose.
 
-### Option 2: Install CLI Tool Locally
+### Option 2: Using Make
+
+```bash
+make install
+```
+
+This installs goose along with other project dependencies.
+
+### Option 3: Install CLI Tool Locally
+
+#### Using Go
+
+```bash
+go install github.com/pressly/goose/v3/cmd/goose@latest
+```
 
 #### macOS
 
 ```bash
-brew install golang-migrate
+brew install goose
 ```
-
-#### Linux
-
-```bash
-curl -L https://github.com/golang-migrate/migrate/releases/download/v4.19.0/migrate.linux-amd64.tar.gz | tar xvz
-sudo mv migrate /usr/local/bin/
-```
-
-#### Windows
-
-Download the binary from the [releases page](https://github.com/golang-migrate/migrate/releases/tag/v4.19.0) and add it to your PATH.
-
 
 ### Verify Installation
 
 ```bash
-migrate -version
+goose --version
 ```
 
 ## Migration File Structure
 
-Migration files are located in the `migrations/` directory and follow this naming convention:
+Migration files are located in the `migrations/` directory. Each migration is a **single SQL file** with `-- +goose Up` and `-- +goose Down` annotations:
 
 ```
-{version}_{description}.up.sql    # Applied when migrating up
-{version}_{description}.down.sql  # Applied when rolling back
+{version}_{description}.sql
 ```
 
 **Example:**
 ```
-000001_create_workflows_table.up.sql
-000001_create_workflows_table.down.sql
-000002_create_tasks_table.up.sql
-000002_create_tasks_table.down.sql
+00001_create_workflows_table.sql
+00002_create_tasks_table.sql
+```
+
+**File format:**
+```sql
+-- +goose Up
+CREATE TABLE IF NOT EXISTS users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    username VARCHAR(255) NOT NULL UNIQUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- +goose Down
+DROP TABLE IF EXISTS users;
 ```
 
 ## Creating New Migrations
 
-### Using Docker Compose
-
 ```bash
-# Create a new migration with sequential numbering
-docker-compose run --rm migration create -ext sql -dir /migrations -seq <migration_name>
+make migrate-create name=add_user_table
 ```
 
-**Example:**
-```bash
-docker-compose run --rm migration create -ext sql -dir /migrations -seq add_user_table
-```
+This creates a new file: `migrations/00003_add_user_table.sql`
 
-This will create two files:
-- `migrations/000003_add_user_table.up.sql`
-- `migrations/000003_add_user_table.down.sql`
-
-### Using Local CLI Tool
-
-```bash
-# Create a new migration
-migrate create -ext sql -dir migrations -seq <migration_name>
-```
-
-**Example:**
-```bash
-migrate create -ext sql -dir migrations -seq add_user_table
-```
+Edit the file and add your `-- +goose Up` and `-- +goose Down` sections.
 
 ### Migration File Guidelines
 
-**UP Migration (`*.up.sql`):**
+**Up section (`-- +goose Up`):**
 - Contains SQL statements to apply the change
 - Should be idempotent when possible (use `IF NOT EXISTS`, etc.)
-- Example:
 
-```sql
-CREATE TABLE IF NOT EXISTS users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    username VARCHAR(255) NOT NULL UNIQUE,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX idx_users_username ON users(username);
-```
-
-**DOWN Migration (`*.down.sql`):**
+**Down section (`-- +goose Down`):**
 - Contains SQL statements to reverse the change
-- Should cleanly undo what the UP migration does
-- Example:
-
-```sql
-DROP TABLE IF EXISTS users;
-```
+- Should cleanly undo what the Up section does
 
 ## Running Migrations
 
 ### Using Docker Compose (Recommended)
 
-The migrations run automatically when you start the services:
+Migrations run automatically when you start the services:
 
 ```bash
 # Start all services (database + migrations)
@@ -126,50 +101,67 @@ docker-compose up -d
 docker-compose logs migration
 ```
 
-### Using Local CLI Tool
+### Using Make Commands
 
-First, ensure your PostgreSQL database is running. You can use the database from docker-compose:
+First, ensure your PostgreSQL database is running:
 
 ```bash
-# Start only the database
 docker-compose up -d database
 ```
 
-Then run migrations using the local tool:
+Then run migrations:
+
+```bash
+# Run all pending migrations
+make migrate
+
+# Rollback last migration
+make migrate-down
+
+# Check migration status
+make migrate-status
+
+# Re-run the latest migration
+make migrate-redo
+
+# Create a new migration
+make migrate-create name=add_user_table
+```
+
+### Using goose CLI Directly
 
 ```bash
 # Set database connection string
-export DATABASE_URL="postgres://user:password@localhost:5432/db_name?sslmode=disable"
+export DB_DSN="postgres://nimbus:nimbus_password@localhost:5432/nimbus_db?sslmode=disable"
 
 # Run all pending migrations
-migrate -path migrations -database "$DATABASE_URL" up 2
+goose -dir migrations postgres "$DB_DSN" up
 
 # Rollback last migration
-migrate -path migrations -database "$DATABASE_URL" down 1
+goose -dir migrations postgres "$DB_DSN" down
 
-# Rollback all migrations
-migrate -path migrations -database "$DATABASE_URL" down
+# Rollback to specific version
+goose -dir migrations postgres "$DB_DSN" down-to 1
 
-# Migrate to specific version
-migrate -path migrations -database "$DATABASE_URL" goto 2
+# Check migration status
+goose -dir migrations postgres "$DB_DSN" status
 
-# Check current migration version
-migrate -path migrations -database "$DATABASE_URL" version
+# Re-run latest migration
+goose -dir migrations postgres "$DB_DSN" redo
 
-# Force set version (use with caution - only when migration state is corrupted)
-migrate -path migrations -database "$DATABASE_URL" force 1
+# Reset all migrations
+goose -dir migrations postgres "$DB_DSN" reset
 ```
 
 ## Additional Resources
 
-- [Official golang-migrate Documentation](https://github.com/golang-migrate/migrate/blob/v4.19.0/cmd/migrate/README.md)
-- [golang-migrate GitHub Repository](https://github.com/golang-migrate/migrate)
+- [Goose Documentation](https://pressly.github.io/goose/)
+- [Goose GitHub Repository](https://github.com/pressly/goose)
 - [PostgreSQL Documentation](https://www.postgresql.org/docs/)
-- [Database Migration Best Practices](https://github.com/golang-migrate/migrate/blob/master/MIGRATIONS.md)
 
 ## Current Migrations
 
 The project currently includes the following migrations:
 
-1. **000001_create_workflows_table** - Creates the workflows table with UUID primary key
-2. **000002_create_tasks_table** - Creates the tasks table with status enum and foreign key to workflows
+1. **00001_create_workflows_table** - Creates the workflows table with UUID primary key
+2. **00002_create_tasks_table** - Creates the tasks table with status enum and foreign key to workflows
