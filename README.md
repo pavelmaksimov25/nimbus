@@ -282,7 +282,7 @@ Run the full pipeline locally with `make ci`.
 - [x] Implement persistent storage (database)
 - [x] Add security middleware (CORS, secure headers, rate limiting)
 - [x] Add security scanning to CI pipeline
-- [ ] Add workflow orchestration capabilities
+- [x] Add workflow orchestration capabilities
 - [ ] Implement task queue system
 - [ ] Add authentication and authorization
 - [ ] Add logging and monitoring
